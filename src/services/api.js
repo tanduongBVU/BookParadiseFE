@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Thay đổi URL dưới đây bằng URL Backend C# của bạn vừa xem ở bước trên
-// Đừng quên thêm đuôi /api nếu các Controller của bạn có Route là [Route("api/[controller]")]
-const BASE_URL = 'https://localhost:7010/api'; // <--- THAY ĐỔI CHỖ NÀY
+// Giữ nguyên port backend của bạn (7010)
+const BASE_URL = 'https://localhost:7010/api'; 
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -10,5 +9,19 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+// Thêm Interceptor: Tự động đính kèm Token vào Header trước khi gửi API
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('bookparadise_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 export default api;
