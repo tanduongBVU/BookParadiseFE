@@ -1,59 +1,62 @@
+// Import thêm useContext và CartContext ở đầu file
+import { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { CartContext } from '../../context/CartContext';
 
 const ProductCard = ({ data }) => {
-    if (!data) return null;
+    if (!data || data.hienThi === false) return null;
 
-    // Chỉ hiển thị sách nếu trường hienThi là true (để ẩn các sách ngưng bán)
-    if (data.hienThi === false) return null;
-
+    const isAvailable = data.soLuong > 0;
+    // Lấy hàm addToCart ra
+    const { addToCart } = useContext(CartContext);
     return (
-        <div style={styles.card}>
-            {/* Model chưa có trường hình ảnh, dùng ảnh mặc định tạm thời */}
-            <img 
-                src={"https://via.placeholder.com/200x250?text=Chưa+có+ảnh"} 
-                alt={data.tenSach} 
-                style={styles.image}
-            />
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
+            {/* Vùng Ảnh */}
+            <div className="relative h-64 overflow-hidden bg-gray-100">
+                <img 
+                    src={"https://via.placeholder.com/300x400?text=Chưa+có+ảnh"} 
+                    alt={data.tenSach} 
+                    className="w-full h-full object-cover object-center"
+                />
+                {!isAvailable && (
+                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                        Hết hàng
+                    </div>
+                )}
+            </div>
             
-            <div style={styles.info}>
-                <h3 style={styles.title} title={data.tenSach}>
-                    {data.tenSach || "Đang cập nhật tên"}
-                </h3>
-                
-                <p style={styles.price}>
-                    {data.gia ? data.gia.toLocaleString('vi-VN') : '0'} đ
-                </p>
-
-                {/* Hiển thị số lượng kho */}
-                <p style={{ fontSize: '12px', color: data.soLuong > 0 ? 'green' : 'red', marginBottom: '10px' }}>
-                    {data.soLuong > 0 ? `Còn hàng (${data.soLuong})` : 'Hết hàng'}
-                </p>
-                
-                <button 
-                    style={data.soLuong > 0 ? styles.btnCart : styles.btnDisabled}
-                    disabled={data.soLuong <= 0}
-                >
-                    {data.soLuong > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
-                </button>
-                
-                {/* Link dẫn sang trang chi tiết dùng maSach */}
-                <Link to={`/sach/${data.maSach}`} style={styles.btnDetail}>
-                    Xem chi tiết
+            {/* Vùng Thông tin */}
+            <div className="p-4 flex flex-col flex-grow">
+                <Link to={`/sach/${data.maSach}`} className="block mt-1 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 hover:text-red-600" title={data.tenSach}>
+                        {data.tenSach || "Đang cập nhật tên"}
+                    </h3>
                 </Link>
+                
+                <div className="mt-auto">
+                    <p className="text-xl font-bold text-red-600 mb-1">
+                        {data.gia ? data.gia.toLocaleString('vi-VN') : '0'} đ
+                    </p>
+                    <p className={`text-sm mb-4 ${isAvailable ? 'text-green-600' : 'text-red-500'}`}>
+                        {isAvailable ? `Kho: ${data.soLuong}` : 'Tạm hết hàng'}
+                    </p>
+                    
+                    
+                    <button 
+                        disabled={!isAvailable}
+                        onClick={() => addToCart(data, 1)} // Gọi hàm thêm 1 sản phẩm
+                        className={`w-full py-2 px-4 rounded font-medium transition-colors ${
+                            isAvailable 
+                            ? 'bg-red-600 text-white hover:bg-red-700' 
+                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {isAvailable ? 'Thêm vào giỏ' : 'Hết hàng'}
+                    </button>
+                </div>
             </div>
         </div>
     );
-};
-
-const styles = {
-    card: { border: '1px solid #eaeaea', borderRadius: '8px', padding: '15px', backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
-    image: { width: '100%', height: '250px', objectFit: 'cover', borderRadius: '4px' },
-    info: { marginTop: '15px', textAlign: 'center' },
-    title: { fontSize: '16px', margin: '0 0 10px', height: '40px', overflow: 'hidden', color: '#333' },
-    price: { color: '#d70018', fontWeight: 'bold', fontSize: '18px', margin: '0 0 5px' },
-    btnCart: { backgroundColor: '#d70018', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', cursor: 'pointer', width: '100%', marginBottom: '10px', fontWeight: 'bold' },
-    btnDisabled: { backgroundColor: '#ccc', color: '#666', border: 'none', padding: '10px', borderRadius: '4px', cursor: 'not-allowed', width: '100%', marginBottom: '10px', fontWeight: 'bold' },
-    btnDetail: { display: 'block', color: '#0056b3', textDecoration: 'none', fontSize: '14px', border: '1px solid #0056b3', padding: '8px', borderRadius: '4px' }
 };
 
 export default ProductCard;
