@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { getDanhSachSach } from '../../services/sachService';
-import ProductCard from '../../components/Product/ProductCard';
+import { WishlistContext } from '../../context/WishlistContext';
+import { CartContext } from '../../context/CartContext'; // Cần để xử lý nút thêm vào giỏ
 
 const Shop = () => {
+
+    const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
+    const { addToCart } = useContext(CartContext); // Khai báo addToCart
+
     // State lưu dữ liệu gốc từ API (không bao giờ sửa)
     const [danhSachGoc, setDanhSachGoc] = useState([]);
     // State lưu dữ liệu đang hiển thị (sau khi lọc)
@@ -162,7 +168,72 @@ const Shop = () => {
                             </div>
                         ) : (
                             danhSachHienThi.map((sach) => (
-                                <ProductCard key={sach.maSach} data={sach} />
+                                // THẺ BAO BỌC TỪNG CUỐN SÁCH TÍCH HỢP TRÁI TIM
+                                <div key={sach.maSach} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group flex flex-col h-full hover:shadow-md transition">
+                                    
+                                    {/* =========== NÚT THẢ TIM (Nổi đè lên góc phải ảnh) =========== */}
+                                    <button 
+                                        onClick={(e) => {
+                                            e.preventDefault(); 
+                                            toggleWishlist(sach.maSach);
+                                        }}
+                                        className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/80 hover:bg-white shadow-sm transition duration-300"
+                                        title="Thêm vào yêu thích"
+                                    >
+                                        <svg 
+                                            xmlns="http://www.w3.org/2000/svg" 
+                                            className={`h-6 w-6 transition-colors duration-300 ${isInWishlist(sach.maSach) ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`} 
+                                            fill={isInWishlist(sach.maSach) ? "currentColor" : "none"} 
+                                            viewBox="0 0 24 24" 
+                                            stroke="currentColor"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    </button>
+
+                                    {/* =========== NỘI DUNG SÁCH (Link tới trang chi tiết) =========== */}
+                                    <Link to={`/sach/${sach.maSach}`} className="flex flex-col h-full">
+                                        <div className="relative pt-[130%] bg-gray-50 overflow-hidden">
+                                            <img 
+                                                src={sach.hinhAnh || "https://via.placeholder.com/300x400?text=Sách"} 
+                                                alt={sach.tenSach} 
+                                                className="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                        </div>
+                                        <div className="p-4 flex flex-col flex-grow">
+                                            <h3 className="font-semibold text-gray-800 line-clamp-2 mb-2 group-hover:text-red-600 transition flex-grow">
+                                                {sach.tenSach}
+                                            </h3>
+                                            <p className="text-red-600 font-bold text-lg mb-2">
+                                                {(sach.gia || 0).toLocaleString('vi-VN')} đ
+                                            </p>
+                                            <p className="text-xs text-gray-500 mb-2">
+                                                Kho: <span className={sach.soLuong > 0 ? "text-green-600" : "text-red-500"}>{sach.soLuong}</span>
+                                            </p>
+                                        </div>
+                                    </Link>
+
+                                    {/* Nút Thêm vào giỏ hàng */}
+                                    <div className="px-4 pb-4 mt-auto">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                if (sach.soLuong > 0) {
+                                                    addToCart(sach, 1);
+                                                    alert(`Đã thêm "${sach.tenSach}" vào giỏ hàng!`);
+                                                }
+                                            }}
+                                            disabled={sach.soLuong <= 0}
+                                            className={`w-full py-2 rounded-lg font-medium transition ${
+                                                sach.soLuong > 0 
+                                                ? 'bg-red-600 text-white hover:bg-red-700' 
+                                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                        >
+                                            Thêm vào giỏ
+                                        </button>
+                                    </div>
+                                </div>
                             ))
                         )}
                     </div>

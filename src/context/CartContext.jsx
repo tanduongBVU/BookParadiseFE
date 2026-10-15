@@ -10,6 +10,20 @@ export const CartProvider = ({ children }) => {
         return savedCart ? JSON.parse(savedCart) : [];
     });
 
+    // --- ĐOẠN CODE THÊM VÀO ĐỂ FIX LỖI GIỎ HÀNG ---
+    // Lắng nghe sự kiện đăng xuất từ AuthContext để dọn sạch giỏ hàng trên UI
+    useEffect(() => {
+        const handleAuthChange = () => {
+            setCart([]); // Trả giỏ hàng về trạng thái trống
+        };
+        
+        window.addEventListener('onAuthChange', handleAuthChange);
+        
+        // Dọn dẹp sự kiện khi component unmount
+        return () => window.removeEventListener('onAuthChange', handleAuthChange);
+    }, []);
+    // ---------------------------------------------
+
     // Mỗi khi giỏ hàng thay đổi, lưu lại vào localStorage ngay
     useEffect(() => {
         localStorage.setItem('bookparadise_cart', JSON.stringify(cart));
