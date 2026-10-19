@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { WishlistContext } from '../../context/WishlistContext';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
-import { getDanhSachSach } from '../../services/sachService'; // API lấy toàn bộ sách của bạn
+import { getDanhSachSach } from '../../services/sachService'; 
 
 const Wishlist = () => {
-    const { wishlist, toggleWishlist, isInWishlist } = useContext(WishlistContext);
+    const { wishlist, toggleWishlist } = useContext(WishlistContext);
     const { addToCart } = useContext(CartContext);
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -23,9 +23,7 @@ const Wishlist = () => {
         const fetchLikedBooks = async () => {
             setLoading(true);
             try {
-                // Lấy toàn bộ sách từ DB
                 const allBooks = await getDanhSachSach();
-                // Chỉ lọc ra những cuốn sách có mã nằm trong mảng wishlist
                 const filteredBooks = allBooks.filter(sach => wishlist.includes(sach.maSach));
                 setLikedBooks(filteredBooks);
             } catch (error) {
@@ -36,7 +34,7 @@ const Wishlist = () => {
         };
 
         fetchLikedBooks();
-    }, [user, wishlist, navigate]); // Tự động load lại nếu wishlist thay đổi
+    }, [user, wishlist, navigate]); 
 
     if (!user) return null;
 
@@ -69,7 +67,12 @@ const Wishlist = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                             </button>
 
-                            <img src={sach.hinhAnh || "https://via.placeholder.com/150x200?text=Sách"} alt={sach.tenSach} className="w-full h-48 object-cover rounded-md mb-4" />
+                            {/* FIX LỖI ẢNH BỊ VỠ TẠI ĐÂY */}
+                            <img 
+                                src={sach.hinhAnh ? `https://localhost:7010${sach.hinhAnh}` : "https://via.placeholder.com/150x200?text=Sách"} 
+                                alt={sach.tenSach} 
+                                className="w-full h-48 object-cover rounded-md mb-4" 
+                            />
                             
                             <h3 className="font-bold text-gray-800 line-clamp-2 mb-2 flex-1">{sach.tenSach}</h3>
                             <p className="text-red-600 font-bold mb-4">{(sach.gia || 0).toLocaleString('vi-VN')} đ</p>

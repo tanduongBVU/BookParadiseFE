@@ -2,7 +2,17 @@ import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { getAllUsers, deleteUser, updateUserRole } from '../../services/userService';
-import { getDanhSachSach } from '../../services/sachService'; // Import thêm service sách
+import { getDanhSachSach } from '../../services/sachService'; 
+
+// Import các component quản lý
+import CategoryManager from './components/CategoryManager';
+import PromotionManager from './components/PromotionManager';
+import ProductManager from './components/ProductManager';
+import ContactManager from './components/ContactManager'; 
+import CommentManager from './components/CommentManager'; 
+import VoucherManager from './components/VoucherManager'; // Đã import VoucherManager
+import OrderManager from './components/OrderManager';
+import DashboardOverview from './components/DashboardOverview';
 
 const AdminDashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -12,7 +22,6 @@ const AdminDashboard = () => {
     const [usersList, setUsersList] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // State lưu trữ dữ liệu thống kê thật
     const [stats, setStats] = useState({
         doanhThu: 0,
         donHangMoi: 0,
@@ -33,13 +42,11 @@ const AdminDashboard = () => {
         }
     };
 
-    // Hàm lấy dữ liệu thật cho Dashboard
     const fetchDashboardStats = async () => {
         try {
             const users = await getAllUsers();
             const sach = await getDanhSachSach();
             
-            // Cập nhật số liệu. Doanh thu và Đơn hàng tạm thời = 0 chờ API DonHang
             setStats({
                 doanhThu: 0, 
                 donHangMoi: 0,
@@ -95,39 +102,7 @@ const AdminDashboard = () => {
         );
     }
 
-    const renderDashboard = () => (
-        <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Tổng Quan Hệ Thống</h1>
-                <Link to="/" className="text-blue-600 hover:underline">Về Cửa hàng &rarr;</Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-                    <h3 className="text-gray-500 text-sm font-medium">Doanh Thu (Tháng)</h3>
-                    <p className="text-2xl font-bold text-gray-800 mt-2">{stats.doanhThu.toLocaleString('vi-VN')} đ</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
-                    <h3 className="text-gray-500 text-sm font-medium">Đơn Hàng Mới</h3>
-                    <p className="text-2xl font-bold text-gray-800 mt-2">{stats.donHangMoi}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-purple-500">
-                    <h3 className="text-gray-500 text-sm font-medium">Sách Trong Kho</h3>
-                    <p className="text-2xl font-bold text-gray-800 mt-2">{stats.sachTrongKho}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-yellow-500">
-                    <h3 className="text-gray-500 text-sm font-medium">Người Dùng</h3>
-                    <p className="text-2xl font-bold text-gray-800 mt-2">{stats.nguoiDung}</p>
-                </div>
-            </div>
-
-            {/* Bảng đơn hàng cứng tạm thời sẽ được thay bằng dữ liệu API ở bước sau */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Đơn hàng mới nhất (Đang cập nhật...)</h2>
-                <div className="text-gray-500 italic">Tính năng thanh toán đang được xây dựng...</div>
-            </div>
-        </div>
-    );
+    const renderDashboard = () => <DashboardOverview />;
 
     const renderUsers = () => (
         <div>
@@ -188,24 +163,90 @@ const AdminDashboard = () => {
         </div>
     );
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'dashboard': return renderDashboard();
+            case 'category': return <CategoryManager />;
+            case 'promotion': return <PromotionManager />;
+            case 'product': return <ProductManager />;
+            case 'users': return renderUsers();
+            case 'contact': return <ContactManager />; 
+            case 'comment': return <CommentManager />; 
+            case 'voucher': return <VoucherManager />; // Đã thêm render cho VoucherManager
+            case 'order': return <OrderManager />;
+            default: return renderDashboard();
+        }
+    };
+
     return (
         <div className="min-h-screen flex bg-gray-100">
             <aside className="w-64 bg-slate-800 text-white flex flex-col shadow-xl flex-shrink-0">
                 <div className="p-6 border-b border-slate-700">
                     <h2 className="text-2xl font-bold text-blue-400">Admin Panel</h2>
                 </div>
-                <nav className="flex-1 p-4 space-y-2">
+                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     <button 
                         onClick={() => setActiveTab('dashboard')}
                         className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
                     >
-                        Tổng Quan
+                        📊 Tổng Quan
                     </button>
+                    
+                    <button 
+                        onClick={() => setActiveTab('category')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'category' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        📚 Loại Sách
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveTab('promotion')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'promotion' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        🎁 Khuyến Mãi
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveTab('product')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'product' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        📦 Sản Phẩm
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveTab('order')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'order' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        🛒 Quản lý Đơn hàng
+                    </button>
+
                     <button 
                         onClick={() => setActiveTab('users')}
                         className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'users' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
                     >
-                        Quản lý Người Dùng
+                        👥 Người Dùng
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveTab('contact')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'contact' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        ✉️ Quản lý Liên Hệ
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveTab('comment')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'comment' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        💬 Quản lý Đánh giá
+                    </button>
+
+                    {/* Menu Quản lý Mã giảm giá mới */}
+                    <button 
+                        onClick={() => setActiveTab('voucher')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'voucher' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                    >
+                        🎟️ Quản lý Mã giảm giá
                     </button>
                 </nav>
                 <div className="p-4 border-t border-slate-700 text-center">
@@ -215,7 +256,7 @@ const AdminDashboard = () => {
             </aside>
 
             <main className="flex-1 p-8 overflow-auto">
-                {activeTab === 'dashboard' ? renderDashboard() : renderUsers()}
+                {renderContent()}
             </main>
         </div>
     );

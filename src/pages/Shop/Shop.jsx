@@ -2,34 +2,29 @@ import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { getDanhSachSach } from '../../services/sachService';
 import { WishlistContext } from '../../context/WishlistContext';
-import { CartContext } from '../../context/CartContext'; // Cần để xử lý nút thêm vào giỏ
+import { CartContext } from '../../context/CartContext';
 
 const Shop = () => {
 
     const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
-    const { addToCart } = useContext(CartContext); // Khai báo addToCart
+    const { addToCart } = useContext(CartContext); 
 
-    // State lưu dữ liệu gốc từ API (không bao giờ sửa)
     const [danhSachGoc, setDanhSachGoc] = useState([]);
-    // State lưu dữ liệu đang hiển thị (sau khi lọc)
     const [danhSachHienThi, setDanhSachHienThi] = useState([]);
     
-    // State quản lý trạng thái loading và error
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // State lưu các giá trị của bộ lọc
     const [searchTerm, setSearchTerm] = useState('');
-    const [priceRange, setPriceRange] = useState('all'); // 'all', 'duoi100', '100den300', 'tren300'
+    const [priceRange, setPriceRange] = useState('all');
 
-    // 1. Gọi API lấy dữ liệu 1 lần lúc mới vào trang
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
                 const data = await getDanhSachSach();
                 setDanhSachGoc(data);
-                setDanhSachHienThi(data); // Mặc định hiển thị tất cả
+                setDanhSachHienThi(data);
                 setLoading(false);
             } catch (err) {
                 setError("Không thể tải dữ liệu, hãy kiểm tra lại Backend.");
@@ -39,18 +34,15 @@ const Shop = () => {
         fetchData();
     }, []);
 
-    // 2. Logic Lọc Dữ Liệu: Chạy mỗi khi user gõ phím hoặc chọn khoảng giá
     useEffect(() => {
         let ketQuaLoc = [...danhSachGoc];
 
-        // Lọc theo từ khóa (Tìm kiếm)
         if (searchTerm) {
             ketQuaLoc = ketQuaLoc.filter(sach => 
                 sach.tenSach.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
-        // Lọc theo khoảng giá
         if (priceRange === 'duoi100') {
             ketQuaLoc = ketQuaLoc.filter(sach => sach.gia < 100000);
         } else if (priceRange === '100den300') {
@@ -62,7 +54,6 @@ const Shop = () => {
         setDanhSachHienThi(ketQuaLoc);
     }, [searchTerm, priceRange, danhSachGoc]);
 
-    // Xử lý làm mới (Reset) bộ lọc
     const handleResetFilter = () => {
         setSearchTerm('');
         setPriceRange('all');
@@ -89,7 +80,6 @@ const Shop = () => {
                             </button>
                         </div>
 
-                        {/* Ô Tìm Kiếm */}
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm tên sách</label>
                             <input 
@@ -101,7 +91,6 @@ const Shop = () => {
                             />
                         </div>
 
-                        {/* Chọn Khoảng Giá */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Khoảng giá</label>
                             <div className="space-y-3">
@@ -168,10 +157,9 @@ const Shop = () => {
                             </div>
                         ) : (
                             danhSachHienThi.map((sach) => (
-                                // THẺ BAO BỌC TỪNG CUỐN SÁCH TÍCH HỢP TRÁI TIM
                                 <div key={sach.maSach} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group flex flex-col h-full hover:shadow-md transition">
                                     
-                                    {/* =========== NÚT THẢ TIM (Nổi đè lên góc phải ảnh) =========== */}
+                                    {/* =========== NÚT THẢ TIM =========== */}
                                     <button 
                                         onClick={(e) => {
                                             e.preventDefault(); 
@@ -191,11 +179,12 @@ const Shop = () => {
                                         </svg>
                                     </button>
 
-                                    {/* =========== NỘI DUNG SÁCH (Link tới trang chi tiết) =========== */}
+                                    {/* =========== NỘI DUNG SÁCH =========== */}
                                     <Link to={`/sach/${sach.maSach}`} className="flex flex-col h-full">
                                         <div className="relative pt-[130%] bg-gray-50 overflow-hidden">
+                                            {/* ĐÃ CHÈN DOMAIN BACKEND VÀO ĐÂY */}
                                             <img 
-                                                src={sach.hinhAnh || "https://via.placeholder.com/300x400?text=Sách"} 
+                                                src={sach.hinhAnh ? `https://localhost:7010${sach.hinhAnh}` : "https://via.placeholder.com/300x400?text=Sách"} 
                                                 alt={sach.tenSach} 
                                                 className="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                             />

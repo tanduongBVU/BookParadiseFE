@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
-import { createDonHang, createChiTietDonHang } from '../../services/orderService';
+import { createDonHang, createChiTietDonHang, applyVoucher } from '../../services/orderService';
 
 const Checkout = () => {
     const { cart, clearCart } = useContext(CartContext);
@@ -12,7 +12,11 @@ const Checkout = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Bắt buộc phải đăng nhập và có hàng trong giỏ mới được vào trang này
+    const [voucherCodeInput, setVoucherCodeInput] = useState('');
+    const [appliedVoucher, setAppliedVoucher] = useState(null);
+    const [voucherError, setVoucherError] = useState('');
+    const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
+
     useEffect(() => {
         if (!user) {
             alert("Bạn cần đăng nhập để thanh toán!");
@@ -22,33 +26,43 @@ const Checkout = () => {
         }
     }, [user, cart, navigate]);
 
-    const tongTien = cart.reduce((total, item) => total + (item.gia * item.soMua), 0);
+    const tongTienGoc = cart.reduce((total, item) => total + (item.gia * item.soMua), 0);
+    const soTienGiam = appliedVoucher ? appliedVoucher.soTienGiam : 0;
+    const tongTienThanhToan = tongTienGoc - soTienGiam > 0 ? tongTienGoc - soTienGiam : 0;
 
-    // Xử lý luồng đặt hàng
+    const handleApplyVoucher = async () => {
+        if (!voucherCodeInput.trim()) return;
+        setIsApplyingVoucher(true);
+        setVoucherError('');
+        try {
+            const data = await applyVoucher(voucherCodeInput, tongTienGoc);
+            setAppliedVoucher(data);
+            setVoucherCodeInput('');
+        } catch (err) {
+            setVoucherError(err);
+            setAppliedVoucher(null);
+        } finally {
+            setIsApplyingVoucher(false);
+        }
+    };
+
     const handleDatHang = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
         try {
-            // 1. Tạo Đơn Hàng tổng
-            const donHangResult = await createDonHang(user.id, tongTien);
-            const newMaDonHang = donHangResult.maDonHang; // Lấy ID vừa được C# sinh ra
+            const donHangResult = await createDonHang(user.id || user.maNguoiDung, tongTienThanhToan, appliedVoucher?.code, soTienGiam);
+            const newMaDonHang = donHangResult.maDonHang; 
 
-            // 2. Lặp qua giỏ hàng và tạo từng Chi Tiết Đơn Hàng
             for (const item of cart) {
-                await createChiTietDonHang(
-                    newMaDonHang, 
-                    item.maSach, 
-                    item.soMua, 
-                    item.gia
-                );
+                // Đảm bảo gửi đúng item.gia (đã tính giá cộng thêm của biến thể)
+                await createChiTietDonHang(newMaDonHang, item.maSach, item.soMua, item.gia);
             }
 
-            // 3. Xử lý thành công
             clearCart();
             alert(`Đặt hàng thành công! Mã đơn hàng của bạn là #${newMaDonHang}`);
-            navigate('/'); // Trở về trang chủ
+            navigate('/'); 
             
         } catch (err) {
             setError(err || "Có lỗi xảy ra trong quá trình đặt hàng.");
@@ -64,14 +78,11 @@ const Checkout = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Thanh Toán</h1>
             
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-                {/* Form thông tin người nhận (Hiện tại là Thanh toán khi nhận hàng) */}
                 <div className="lg:w-2/3 w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                     <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-4">Thông tin giao hàng</h2>
                     
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200">
-                            {error}
-                        </div>
+                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200">{error}</div>
                     )}
 
                     <form onSubmit={handleDatHang} className="space-y-6">
@@ -79,7 +90,7 @@ const Checkout = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-2">Họ và Tên người nhận</label>
                             <input 
                                 type="text" 
-                                value={user.ten || user.email} // Lấy sẵn tên từ tài khoản
+                                value={user.hoTen || user.email}
                                 disabled
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                             />
@@ -105,39 +116,78 @@ const Checkout = () => {
                     </form>
                 </div>
 
-                {/* Tóm tắt đơn hàng bên phải */}
                 <div className="lg:w-1/3 w-full bg-gray-50 rounded-xl shadow-inner border border-gray-200 p-6">
                     <h2 className="text-lg font-bold text-gray-800 mb-4">Tóm tắt đơn hàng</h2>
                     
-                    <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
+                    <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
                         {cart.map(item => (
-                            <div key={item.maSach} className="flex gap-4">
+                            <div key={item.cartId} className="flex gap-4 bg-white p-2 rounded-lg border border-gray-100">
+                                {/* FIX LỖI ẢNH: Đã thêm https://localhost:7010 */}
                                 <img 
-                                    src={item.hinhAnh || "https://via.placeholder.com/60x80?text=Sách"} 
+                                    src={item.hinhAnh ? `https://localhost:7010${item.hinhAnh}` : "https://via.placeholder.com/60x80?text=Sách"} 
                                     alt={item.tenSach} 
-                                    className="w-16 h-20 object-cover rounded border border-gray-200"
+                                    className="w-14 h-20 object-cover rounded border border-gray-200"
                                 />
-                                <div>
+                                <div className="flex-1">
                                     <h4 className="font-medium text-gray-800 text-sm line-clamp-2">{item.tenSach}</h4>
-                                    <p className="text-gray-500 text-xs mt-1">SL: {item.soMua}</p>
-                                    <p className="text-red-600 font-bold text-sm mt-1">{(item.gia * item.soMua).toLocaleString('vi-VN')} đ</p>
+                                    
+                                    {/* Hiển thị thêm biến thể nếu có */}
+                                    {item.tenBienThe && (
+                                        <p className="text-xs text-blue-600 font-medium mt-0.5">{item.tenBienThe}</p>
+                                    )}
+                                    
+                                    <div className="flex justify-between items-center mt-1">
+                                        <p className="text-gray-500 text-xs">SL: {item.soMua}</p>
+                                        <p className="text-red-600 font-bold text-sm">{(item.gia * item.soMua).toLocaleString('vi-VN')} đ</p>
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="border-t border-gray-200 pt-4 space-y-3">
-                        <div className="flex justify-between text-gray-600">
+                    <div className="mb-6 border-t border-b border-gray-200 py-4">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Mã giảm giá</label>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="Nhập mã (VD: SALE50)" 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none uppercase"
+                                value={voucherCodeInput}
+                                onChange={e => setVoucherCodeInput(e.target.value.toUpperCase())}
+                            />
+                            <button 
+                                type="button"
+                                onClick={handleApplyVoucher}
+                                disabled={isApplyingVoucher || !voucherCodeInput}
+                                className="bg-gray-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-400"
+                            >
+                                Áp dụng
+                            </button>
+                        </div>
+                        {voucherError && <p className="text-red-500 text-xs mt-2">{voucherError}</p>}
+                        
+                        {appliedVoucher && (
+                            <div className="mt-3 flex justify-between items-center bg-green-50 border border-green-200 p-3 rounded-lg">
+                                <span className="text-green-700 font-bold text-sm">Đã áp dụng mã: {appliedVoucher.code}</span>
+                                <button type="button" onClick={() => setAppliedVoucher(null)} className="text-red-500 text-xs hover:underline">Gỡ bỏ</button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex justify-between text-gray-600 text-sm">
                             <span>Tạm tính</span>
-                            <span>{tongTien.toLocaleString('vi-VN')} đ</span>
+                            <span className="font-medium">{tongTienGoc.toLocaleString('vi-VN')} đ</span>
                         </div>
-                        <div className="flex justify-between text-gray-600">
-                            <span>Phí giao hàng</span>
-                            <span className="text-green-600 font-medium">Miễn phí</span>
-                        </div>
+                        {appliedVoucher && (
+                            <div className="flex justify-between text-green-600 font-medium text-sm">
+                                <span>Giảm giá Voucher</span>
+                                <span>- {soTienGiam.toLocaleString('vi-VN')} đ</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-end pt-3 border-t">
                             <span className="text-lg font-bold text-gray-900">Tổng cộng</span>
-                            <span className="text-2xl font-bold text-red-600">{tongTien.toLocaleString('vi-VN')} đ</span>
+                            <span className="text-2xl font-bold text-red-600">{tongTienThanhToan.toLocaleString('vi-VN')} đ</span>
                         </div>
                     </div>
                 </div>
