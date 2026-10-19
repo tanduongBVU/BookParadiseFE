@@ -25,7 +25,13 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem('bookparadise_user');
         localStorage.removeItem('bookparadise_token');
-        // Có thể thêm dòng xóa giỏ hàng ở đây nếu muốn
+        
+        // --- ĐOẠN CODE THÊM VÀO ĐỂ FIX LỖI GIỎ HÀNG ---
+        // 1. Xóa giỏ hàng cũ khỏi localStorage
+        localStorage.removeItem('bookparadise_cart'); 
+        // 2. Phát sự kiện toàn cục để báo cho CartContext biết user đã đăng xuất
+        window.dispatchEvent(new Event('onAuthChange'));
+        // ---------------------------------------------
     };
 
     return (

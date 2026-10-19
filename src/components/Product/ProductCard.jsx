@@ -1,4 +1,3 @@
-// Import thêm useContext và CartContext ở đầu file
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
@@ -7,14 +6,15 @@ const ProductCard = ({ data }) => {
     if (!data || data.hienThi === false) return null;
 
     const isAvailable = data.soLuong > 0;
-    // Lấy hàm addToCart ra
     const { addToCart } = useContext(CartContext);
+    
     return (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
             {/* Vùng Ảnh */}
             <div className="relative h-64 overflow-hidden bg-gray-100">
+                {/* FIX LỖI ẢNH: Sử dụng đường dẫn từ database kết hợp với URL Backend */}
                 <img 
-                    src={"https://via.placeholder.com/300x400?text=Chưa+có+ảnh"} 
+                    src={data.hinhAnh ? `https://localhost:7010${data.hinhAnh}` : "https://via.placeholder.com/300x400?text=Chưa+có+ảnh"} 
                     alt={data.tenSach} 
                     className="w-full h-full object-cover object-center"
                 />
@@ -41,10 +41,12 @@ const ProductCard = ({ data }) => {
                         {isAvailable ? `Kho: ${data.soLuong}` : 'Tạm hết hàng'}
                     </p>
                     
-                    
                     <button 
                         disabled={!isAvailable}
-                        onClick={() => addToCart(data, 1)} // Gọi hàm thêm 1 sản phẩm
+                        onClick={() => {
+                            addToCart(data, 1);
+                            alert("Đã thêm vào giỏ!");
+                        }}
                         className={`w-full py-2 px-4 rounded font-medium transition-colors ${
                             isAvailable 
                             ? 'bg-red-600 text-white hover:bg-red-700' 

@@ -1,54 +1,66 @@
 import { createContext, useState, useEffect } from 'react';
 
-// Khởi tạo Context
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    // Khởi tạo state giỏ hàng. Ưu tiên lấy từ localStorage nếu đã có.
     const [cart, setCart] = useState(() => {
         const savedCart = localStorage.getItem('bookparadise_cart');
         return savedCart ? JSON.parse(savedCart) : [];
     });
 
-    // Mỗi khi giỏ hàng thay đổi, lưu lại vào localStorage ngay
+    useEffect(() => {
+        const handleAuthChange = () => setCart([]);
+        window.addEventListener('onAuthChange', handleAuthChange);
+        return () => window.removeEventListener('onAuthChange', handleAuthChange);
+    }, []);
+
     useEffect(() => {
         localStorage.setItem('bookparadise_cart', JSON.stringify(cart));
     }, [cart]);
 
-    // Hàm thêm vào giỏ
-    const addToCart = (product, quantity = 1) => {
+    // Cập nhật hàm Add nhận thêm selectedVariant
+    const addToCart = (product, quantity = 1, selectedVariant = null) => {
         setCart((prevCart) => {
-            // Kiểm tra sách đã có trong giỏ chưa
-            const existingItem = prevCart.find(item => item.maSach === product.maSach);
+            const variantName = selectedVariant ? selectedVariant.tenBienThe : "";
+            const variantPrice = selectedVariant ? selectedVariant.giaCongThem : 0;
+            const stockLimit = selectedVariant ? selectedVariant.soLuong : product.soLuong;
+            
+            // Tạo ID duy nhất cho giỏ hàng (VD: "9_Bìa cứng")
+            const cartId = `${product.maSach}_${variantName}`; 
+
+            const existingItem = prevCart.find(item => item.cartId === cartId);
             
             if (existingItem) {
-                // Nếu có rồi thì tăng số lượng (không vượt quá số lượng tồn kho)
                 return prevCart.map(item => 
-                    item.maSach === product.maSach 
-                    ? { ...item, soMua: Math.min(item.soMua + quantity, product.soLuong) }
+                    item.cartId === cartId 
+                    ? { ...item, soMua: Math.min(item.soMua + quantity, stockLimit) }
                     : item
                 );
             } else {
-                // Nếu chưa có thì thêm mới, đặt trường số lượng mua là 'soMua'
-                return [...prevCart, { ...product, soMua: quantity }];
+                return [...prevCart, { 
+                    ...product, 
+                    cartId: cartId, // Lưu ID riêng biệt
+                    gia: product.gia + variantPrice, // Đã tính cộng giá biến thể
+                    tenBienThe: variantName, 
+                    soMua: quantity,
+                    soLuong: stockLimit // Ghi đè tồn kho theo biến thể
+                }];
             }
         });
-        alert(`Đã thêm "${product.tenSach}" vào giỏ hàng!`);
+        alert(`Đã thêm "${product.tenSach}${selectedVariant ? ` - ${selectedVariant.tenBienThe}` : ''}" vào giỏ hàng!`);
     };
 
-    // Hàm xóa khỏi giỏ
-    const removeFromCart = (maSach) => {
-        setCart(prevCart => prevCart.filter(item => item.maSach !== maSach));
+    // Đổi tham số từ maSach sang cartId
+    const removeFromCart = (cartId) => {
+        setCart(prevCart => prevCart.filter(item => item.cartId !== cartId));
     };
 
-    // Hàm thay đổi số lượng trực tiếp trong giỏ
-    const updateQuantity = (maSach, quantity) => {
+    const updateQuantity = (cartId, quantity) => {
         setCart(prevCart => prevCart.map(item => 
-            item.maSach === maSach ? { ...item, soMua: quantity } : item
+            item.cartId === cartId ? { ...item, soMua: quantity } : item
         ));
     };
 
-    // Xóa sạch giỏ hàng (dùng khi thanh toán xong)
     const clearCart = () => setCart([]);
 
     return (

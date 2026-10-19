@@ -13,7 +13,7 @@ const Cart = () => {
     // Xử lý tăng số lượng (không vượt quá số lượng tồn kho)
     const handleIncrease = (item) => {
         if (item.soMua < item.soLuong) {
-            updateQuantity(item.maSach, item.soMua + 1);
+            updateQuantity(item.cartId, item.soMua + 1);
         } else {
             alert(`Sản phẩm này chỉ còn tối đa ${item.soLuong} cuốn trong kho!`);
         }
@@ -22,7 +22,7 @@ const Cart = () => {
     // Xử lý giảm số lượng (tối thiểu là 1)
     const handleDecrease = (item) => {
         if (item.soMua > 1) {
-            updateQuantity(item.maSach, item.soMua - 1);
+            updateQuantity(item.cartId, item.soMua - 1);
         }
     };
 
@@ -63,11 +63,11 @@ const Cart = () => {
                         {/* Danh sách Item */}
                         <div className="divide-y divide-gray-200">
                             {cart.map((item) => (
-                                <div key={item.maSach} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 items-center">
+                                <div key={item.cartId} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 items-center">
                                     {/* Cột Sản phẩm (Hình + Tên) */}
                                     <div className="col-span-1 sm:col-span-6 flex items-center gap-4">
                                         <button 
-                                            onClick={() => removeFromCart(item.maSach)}
+                                            onClick={() => removeFromCart(item.cartId)}
                                             className="text-gray-400 hover:text-red-500 transition hidden sm:block"
                                             title="Xóa khỏi giỏ"
                                         >
@@ -76,8 +76,9 @@ const Cart = () => {
                                             </svg>
                                         </button>
                                         
+                                        {/* Hình ảnh */}
                                         <img 
-                                            src={item.hinhAnh || "https://via.placeholder.com/100x120?text=Sách"} 
+                                            src={item.hinhAnh ? `https://localhost:7010${item.hinhAnh}` : "https://via.placeholder.com/100x120?text=Sách"} 
                                             alt={item.tenSach} 
                                             className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded border border-gray-200"
                                         />
@@ -85,9 +86,15 @@ const Cart = () => {
                                             <Link to={`/sach/${item.maSach}`} className="font-semibold text-gray-800 hover:text-red-600 line-clamp-2">
                                                 {item.tenSach}
                                             </Link>
+                                            
+                                            {/* Hiển thị thêm tên phân loại/biến thể nếu có */}
+                                            {item.tenBienThe && (
+                                                <span className="text-sm text-gray-500 block mt-1">Phân loại: {item.tenBienThe}</span>
+                                            )}
+                                            
                                             {/* Hiện nút xóa ở giao diện Mobile */}
                                             <button 
-                                                onClick={() => removeFromCart(item.maSach)}
+                                                onClick={() => removeFromCart(item.cartId)}
                                                 className="text-sm text-red-500 hover:underline mt-1 sm:hidden block"
                                             >
                                                 Xóa
