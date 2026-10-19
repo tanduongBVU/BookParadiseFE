@@ -43,10 +43,7 @@ const ProductCard = ({ data }) => {
                     
                     <button 
                         disabled={!isAvailable}
-                        onClick={() => {
-                            addToCart(data, 1);
-                            alert("Đã thêm vào giỏ!");
-                        }}
+                       onClick={() => addToCart(data, 1)}
                         className={`w-full py-2 px-4 rounded font-medium transition-colors ${
                             isAvailable 
                             ? 'bg-red-600 text-white hover:bg-red-700' 

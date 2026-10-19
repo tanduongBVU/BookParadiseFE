@@ -1,0 +1,315 @@
+/* ==========================================================
+   Wishlist.css - Trang Sách Yêu Thích (BookParadise)
+   Đổi màu chủ đạo: tìm và thay #dc2626 (đỏ) / #b91c1c (đỏ đậm)
+   ========================================================== */
+
+:root {
+    --wl-primary: #dc2626;
+    --wl-primary-dark: #b91c1c;
+    --wl-heart: #ef4444;
+    --wl-text: #111827;
+    --wl-muted: #6b7280;
+    --wl-border: #e5e7eb;
+    --wl-surface: #ffffff;
+    --wl-success: #16a34a;
+}
+
+/* ---------- Khung trang ---------- */
+.wl-page {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    box-sizing: border-box;
+}
+.wl-page *,
+.wl-page *::before,
+.wl-page *::after {
+    box-sizing: border-box;
+}
+
+/* ---------- Tiêu đề ---------- */
+.wl-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--wl-border);
+}
+.wl-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.wl-title-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    background: #fef2f2;
+    color: var(--wl-heart);
+}
+.wl-title-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+.wl-title {
+    margin: 0;
+    font-size: 1.875rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--wl-text);
+}
+.wl-count {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--wl-muted);
+}
+.wl-continue {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--wl-primary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.wl-continue:hover {
+    color: var(--wl-primary-dark);
+    text-decoration: underline;
+}
+
+/* ---------- Lưới sách ---------- */
+.wl-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+@media (min-width: 640px) {
+    .wl-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 768px) {
+    .wl-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1024px) {
+    .wl-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ---------- Thẻ sách ---------- */
+.wl-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--wl-surface);
+    border: 1px solid #f3f4f6;
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.wl-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Ảnh bìa */
+.wl-cover {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: #f3f4f6;
+    margin-bottom: 1rem;
+}
+.wl-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+.wl-card:hover .wl-cover img {
+    transform: scale(1.05);
+}
+
+/* Nút bỏ yêu thích */
+.wl-heart-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--wl-heart);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.wl-heart-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+.wl-heart-btn:hover {
+    background: var(--wl-heart);
+    color: #fff;
+    transform: scale(1.08);
+}
+.wl-heart-btn:focus-visible {
+    outline: 3px solid #fecaca;
+    outline-offset: 2px;
+}
+
+/* Tên sách (tối đa 2 dòng) */
+.wl-name {
+    margin: 0 0 0.5rem;
+    min-height: 2.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.375;
+    color: var(--wl-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Giá */
+.wl-price {
+    margin: 0 0 1rem;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--wl-primary);
+}
+
+/* Nút thêm vào giỏ */
+.wl-add-btn {
+    margin-top: auto;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0;
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--wl-text);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.wl-add-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+.wl-add-btn:hover {
+    background: var(--wl-primary);
+}
+.wl-add-btn.is-added {
+    background: var(--wl-success);
+}
+.wl-add-btn:focus-visible {
+    outline: 3px solid #d1d5db;
+    outline-offset: 2px;
+}
+
+/* ---------- Skeleton khi đang tải ---------- */
+.wl-skeleton {
+    background: var(--wl-surface);
+    border: 1px solid #f3f4f6;
+    border-radius: 1rem;
+    padding: 1rem;
+    animation: wl-pulse 1.5s ease-in-out infinite;
+}
+.wl-sk-block {
+    background: var(--wl-border);
+    border-radius: 0.5rem;
+}
+@keyframes wl-pulse {
+    50% { opacity: 0.5; }
+}
+
+/* ---------- Trạng thái trống ---------- */
+.wl-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 5rem 1.5rem;
+    background: var(--wl-surface);
+    border: 1px dashed #d1d5db;
+    border-radius: 1.5rem;
+}
+.wl-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 5rem;
+    height: 5rem;
+    margin-bottom: 1.25rem;
+    border-radius: 9999px;
+    background: #fef2f2;
+    color: #fca5a5;
+}
+.wl-empty-icon svg {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+.wl-empty h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--wl-text);
+}
+.wl-empty p {
+    margin: 0 0 1.75rem;
+    max-width: 24rem;
+    color: var(--wl-muted);
+}
+.wl-empty-cta {
+    padding: 0.75rem 1.75rem;
+    background: var(--wl-primary);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: background 0.2s ease;
+}
+.wl-empty-cta:hover {
+    background: var(--wl-primary-dark);
+}
+.wl-empty-cta:focus-visible {
+    outline: 3px solid #fecaca;
+    outline-offset: 2px;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 639px) {
+    .wl-page { padding: 1.5rem 1rem; }
+    .wl-title { font-size: 1.5rem; }
+    .wl-continue { display: none; }
+}
+
+/* ---------- Tôn trọng người dùng tắt hiệu ứng ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .wl-card,
+    .wl-cover img,
+    .wl-heart-btn,
+    .wl-skeleton {
+        transition: none;
+        animation: none;
+    }
+    .wl-card:hover { transform: none; }
+    .wl-card:hover .wl-cover img { transform: none; }
+}

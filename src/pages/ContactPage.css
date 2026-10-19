@@ -1,0 +1,410 @@
+.bp-contact {
+    --contact-red: #b52e3b;
+    --contact-ink: #302628;
+    --contact-muted: #7b6f72;
+
+    box-sizing: border-box;
+    padding: 56px 24px 76px;
+    color: var(--contact-ink);
+    background: linear-gradient(180deg, #fff8f6 0%, #faf9f8 100%);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.bp-contact *,
+.bp-contact *::before,
+.bp-contact *::after {
+    box-sizing: border-box;
+}
+
+.bp-contact h1,
+.bp-contact h2,
+.bp-contact h3,
+.bp-contact p {
+    margin: 0;
+}
+
+.bp-contact__container {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+/* Phần tiêu đề */
+.bp-contact__heading {
+    max-width: 650px;
+    margin-bottom: 32px;
+}
+
+.bp-contact .bp-contact__eyebrow {
+    margin-bottom: 14px;
+    color: var(--contact-red);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+.bp-contact__heading h1 {
+    margin-bottom: 16px;
+    font-size: clamp(30px, 3.6vw, 44px);
+    font-weight: 750;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+}
+
+.bp-contact__heading > p:last-child {
+    color: var(--contact-muted);
+    line-height: 1.8;
+}
+
+/* Bố cục hai cột */
+.bp-contact__layout {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.bp-contact__intro,
+.bp-contact__form {
+    min-width: 0;
+    padding: 34px;
+    border-radius: 24px;
+}
+
+/* Thẻ giới thiệu */
+.bp-contact__intro {
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            #a34c53 0%,
+            transparent 55%
+        ),
+        #762733;
+}
+
+.bp-contact__book {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 26px;
+    border: 1px solid #ffffff30;
+    border-radius: 16px;
+    background: #ffffff0d;
+}
+
+.bp-contact__book svg {
+    width: 29px;
+    height: 29px;
+}
+
+.bp-contact__intro h2 {
+    margin-bottom: 14px;
+    font-size: 27px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.bp-contact__intro > p {
+    color: #f0d8dc;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.bp-contact__topics {
+    display: grid;
+    gap: 22px;
+    margin: 30px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bp-contact__topics li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.bp-contact__topics li > span {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #ffffff12;
+    color: #f5d8dc;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.bp-contact__topics h3 {
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.bp-contact__topics p {
+    color: #f0d8dc;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.bp-contact__signature {
+    margin-top: auto;
+    padding-top: 22px;
+    border-top: 1px solid #ffffff26;
+    color: #f0d8dc;
+    font-size: 12px;
+}
+
+/* Thẻ form */
+.bp-contact__form {
+    border: 1px solid #eee4e5;
+    background: #fff;
+    box-shadow: 0 12px 40px #55202a08;
+}
+
+.bp-contact__form h2 {
+    margin-bottom: 8px;
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.bp-contact .bp-contact__form-description {
+    margin-bottom: 28px;
+    color: var(--contact-muted);
+    font-size: 14px;
+}
+
+.bp-contact__form fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.bp-contact__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.bp-contact__field {
+    min-width: 0;
+    margin-bottom: 22px;
+}
+
+.bp-contact__field label {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.bp-contact__field label span,
+.bp-contact__note span {
+    color: var(--contact-red);
+}
+
+.bp-contact__field input,
+.bp-contact__field textarea {
+    display: block;
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid #e4dcde;
+    border-radius: 12px;
+    outline: none;
+    background: #fdfcfc;
+    color: var(--contact-ink);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s,
+        background 0.2s;
+}
+
+.bp-contact__field textarea {
+    min-height: 168px;
+    resize: vertical;
+}
+
+.bp-contact__field input::placeholder,
+.bp-contact__field textarea::placeholder {
+    color: #a3989c;
+    opacity: 1;
+}
+
+.bp-contact__field input:focus,
+.bp-contact__field textarea:focus {
+    border-color: var(--contact-red);
+    background: #fff;
+    box-shadow: 0 0 0 4px #b52e3b12;
+}
+
+/* Nút gửi */
+.bp-contact__submit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 50px;
+    padding: 13px 20px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--contact-red);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.2s,
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+.bp-contact__submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: #982330;
+    box-shadow: 0 8px 18px #b52e3b26;
+}
+
+.bp-contact__submit:focus-visible {
+    outline: 3px solid #b52e3b55;
+    outline-offset: 4px;
+}
+
+.bp-contact__submit:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.bp-contact__field input:disabled,
+.bp-contact__field textarea:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.bp-contact .bp-contact__note {
+    margin-top: 16px;
+    color: var(--contact-muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+/* Thông báo kết quả */
+.bp-contact__feedback {
+    margin-bottom: 22px;
+    padding: 13px 15px;
+    border: 1px solid;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.bp-contact__feedback--success {
+    border-color: #c7e6d2;
+    color: #286343;
+    background: #f0faf4;
+}
+
+.bp-contact__feedback--error {
+    border-color: #f0c8cd;
+    color: #a32a38;
+    background: #fff3f4;
+}
+
+.bp-contact__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff55;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: bp-contact-spin 0.7s linear infinite;
+}
+
+@keyframes bp-contact-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Máy tính bảng */
+@media (max-width: 850px) {
+    .bp-contact {
+        padding: 36px 20px 48px;
+    }
+
+    .bp-contact__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .bp-contact__intro,
+    .bp-contact__form {
+        padding: 28px;
+    }
+
+    .bp-contact__topics {
+        gap: 18px;
+        margin: 24px 0;
+    }
+}
+
+/* Điện thoại */
+@media (max-width: 480px) {
+    .bp-contact {
+        padding: 28px 16px 40px;
+    }
+
+    .bp-contact__heading {
+        margin-bottom: 24px;
+    }
+
+    .bp-contact__heading > p:last-child {
+        font-size: 14px;
+    }
+
+    .bp-contact__row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .bp-contact__intro,
+    .bp-contact__form {
+        padding: 24px 20px;
+        border-radius: 18px;
+    }
+
+    .bp-contact__intro h2,
+    .bp-contact__form h2 {
+        font-size: 23px;
+    }
+
+    .bp-contact__field input,
+    .bp-contact__field textarea {
+        font-size: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bp-contact__field input,
+    .bp-contact__field textarea,
+    .bp-contact__submit {
+        transition: none;
+    }
+
+    .bp-contact__submit:hover:not(:disabled) {
+        transform: none;
+    }
+
+    .bp-contact__spinner {
+        animation: none;
+    }
+}

@@ -1,0 +1,133 @@
+.bp-cart-toast {
+    position: fixed;
+    top: 88px;
+    right: 24px;
+    z-index: 9999;
+
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    padding: 18px;
+
+    border: 1px solid #e2ece5;
+    border-left: 4px solid #22a05a;
+    border-radius: 16px;
+
+    background: #fff;
+    color: #24332a;
+    box-shadow: 0 12px 40px #182f2426;
+    font-family: inherit;
+
+    animation: bp-cart-toast-in 0.25s ease-out;
+}
+
+.bp-cart-toast,
+.bp-cart-toast * {
+    box-sizing: border-box;
+}
+
+.bp-cart-toast__icon {
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 38px;
+    height: 38px;
+    border-radius: 50%;
+
+    background: #eaf8ef;
+    color: #16924c;
+}
+
+.bp-cart-toast__icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.bp-cart-toast__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bp-cart-toast__content strong {
+    display: block;
+    margin: 0 0 5px;
+
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.bp-cart-toast__content p {
+    margin: 0;
+    color: #6b756f;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.bp-cart-toast__close {
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 28px;
+    height: 28px;
+    padding: 0;
+
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #87918a;
+
+    font: inherit;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+
+    transition: color 0.2s, background 0.2s;
+}
+
+.bp-cart-toast__close:hover {
+    background: #fff0f1;
+    color: #b52e3b;
+}
+
+.bp-cart-toast__close:focus-visible {
+    outline: 2px solid #16924c;
+    outline-offset: 2px;
+}
+
+@keyframes bp-cart-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .bp-cart-toast {
+        top: 80px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+        padding: 15px;
+        gap: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bp-cart-toast {
+        animation: none;
+    }
+
+    .bp-cart-toast__close {
+        transition: none;
+    }
+}

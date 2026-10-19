@@ -1,98 +1,329 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
+import {
+    Link,
+    NavLink,
+    useLocation,
+    useNavigate,
+} from 'react-router-dom';
+
+import {
+    useContext,
+    useEffect,
+    useId,
+    useRef,
+    useState,
+} from 'react';
+
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import { WishlistContext } from '../../context/WishlistContext';
 
-const Header = () => {
-    const { wishlist } = useContext(WishlistContext);
-    const { cart } = useContext(CartContext);
-    const { user, logout } = useContext(AuthContext);
-    const navigate = useNavigate();
-    
-    const totalItems = cart.reduce((total, item) => total + item.soMua, 0);
+import './Header.css';
 
-    const handleLogout = () => {
-        logout();
-        navigate('/'); 
+const MENU = [
+    ['/', 'Trang chủ'],
+    ['/sach', 'Cửa hàng'],
+    ['/sale', 'Khuyến mãi'],
+    ['/about', 'Về chúng tôi'],
+    ['/lien-he', 'Liên hệ'],
+];
+
+// Icon SVG: không cần cài thư viện
+function Icon({ name }) {
+    const paths = {
+        book: 'M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1ZM12 6v14',
+        heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
+        cart: 'M3 3h2l3 12h10l3-9H6M9 19h.01M18 19h.01',
+        user: 'M20 21v-2a7 7 0 0 0-14 0v2M17 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+        down: 'm6 9 6 6 6-6',
+        menu: 'M4 6h16M4 12h16M4 18h16',
+        close: 'm6 6 12 12M18 6 6 18',
+        admin: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
+        logout: 'M9 4H4v16h5M14 8l4 4-4 4M8 12h13',
     };
 
     return (
-        <header className="bg-white shadow-md sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    
-                    {/* Logo */}
-                    <div className="flex-shrink-0 flex items-center">
-                        <Link to="/" className="text-2xl font-bold text-red-600 hover:text-red-700 whitespace-nowrap">
-                            BookParadise
-                        </Link>
-                    </div>
-                    
-                    {/* Menu chính - Thêm whitespace-nowrap để không bị rớt dòng chữ */}
-                    <nav className="hidden md:flex space-x-2 lg:space-x-6 items-center">
-                        <Link to="/" className="text-gray-700 hover:text-red-600 px-2 lg:px-3 py-2 font-medium transition whitespace-nowrap">Trang Chủ</Link>
-                        <Link to="/sach" className="text-gray-700 hover:text-red-600 px-2 lg:px-3 py-2 font-medium transition whitespace-nowrap">Cửa Hàng</Link>
-                        <Link to="/sale" className="text-gray-700 hover:text-blue-600 px-2 lg:px-3 py-2 font-medium transition whitespace-nowrap">Khuyến mãi</Link>
-                        <Link to="/about" className="text-gray-700 hover:text-green-600 px-2 lg:px-3 py-2 font-medium transition whitespace-nowrap">Về Chúng Tôi</Link>
-                        <Link to="/lien-he" className="text-gray-700 hover:text-orange-600 px-2 lg:px-3 py-2 font-medium transition whitespace-nowrap">Liên Hệ</Link>
-                    </nav>
-                    
-                    <div className="flex items-center space-x-4 lg:space-x-6">
-                        
-                        {/* Icon Yêu Thích */}
-                        <Link to="/yeu-thich" className="flex items-center text-gray-700 hover:text-red-600 transition relative mr-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                            <span className="font-bold bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full text-sm">
-                                {wishlist.length}
-                            </span>
-                        </Link>
-                        
-                        {/* Icon Giỏ hàng */}
-                        <Link to="/gio-hang" className="flex items-center text-gray-700 hover:text-red-600 transition relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <span className="font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-sm">
-                                {totalItems}
-                            </span>
-                        </Link>
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d={paths[name]} />
+        </svg>
+    );
+}
 
-                        {/* Phân hệ User - Thêm whitespace-nowrap */}
-                        <div className="border-l border-gray-300 pl-4 lg:pl-6 hidden sm:flex items-center">
-                            {user ? (
-                                <div className="flex items-center space-x-3 lg:space-x-4">
-                                    <span className="text-sm text-gray-600 whitespace-nowrap">
-                                        Xin chào, <b className="text-gray-900">{user.ten || user.email || 'Bạn'}</b>
-                                    </span>
-                                    {user.role === 'Admin' && (
-                                        <Link to="/admin" className="text-sm font-medium text-blue-600 hover:underline whitespace-nowrap">
-                                            Admin Panel
-                                        </Link>
-                                    )}
-                                    <button 
-                                        onClick={handleLogout}
-                                        className="text-sm font-medium text-red-500 hover:text-red-700 transition whitespace-nowrap"
-                                    >
-                                        Đăng xuất
-                                    </button>
-                                </div>
-                            ) : (
-                                <Link 
-                                    to="/dang-nhap" 
-                                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap"
+export default function Header() {
+    const { wishlist = [] } = useContext(WishlistContext);
+    const { cart = [] } = useContext(CartContext);
+    const { user, logout } = useContext(AuthContext);
+
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
+
+    const headerRef = useRef(null);
+    const accountId = useId();
+    const mobileId = useId();
+
+    const [accountOpen, setAccountOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    const totalItems = cart.reduce(
+        (sum, item) => sum + Number(item.soMua || 0),
+        0
+    );
+
+    const displayName = String(
+        user?.ten || user?.email || 'Bạn'
+    );
+
+    const initials =
+        displayName
+            .trim()
+            .split(/\s+/)
+            .slice(-2)
+            .map((word) => word[0])
+            .join('')
+            .toUpperCase() || 'B';
+
+    const closeMenus = () => {
+        setAccountOpen(false);
+        setMobileOpen(false);
+    };
+
+    // Đóng menu khi chuyển trang
+    useEffect(() => {
+        setAccountOpen(false);
+        setMobileOpen(false);
+    }, [pathname]);
+
+    // Đóng menu khi bấm bên ngoài hoặc nhấn Escape
+    useEffect(() => {
+        const handleOutside = (e) => {
+            if (!headerRef.current?.contains(e.target)) {
+                setAccountOpen(false);
+                setMobileOpen(false);
+            }
+        };
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                headerRef.current
+                    ?.querySelector('button[aria-expanded="true"]')
+                    ?.focus();
+
+                setAccountOpen(false);
+                setMobileOpen(false);
+            }
+        };
+
+        document.addEventListener('pointerdown', handleOutside);
+        document.addEventListener('keydown', handleEscape);
+
+        return () => {
+            document.removeEventListener(
+                'pointerdown',
+                handleOutside
+            );
+            document.removeEventListener(
+                'keydown',
+                handleEscape
+            );
+        };
+    }, []);
+
+    const handleLogout = () => {
+        closeMenus();
+        logout();
+        navigate('/');
+    };
+
+    const menuLinks = MENU.map(([to, label]) => (
+        <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            onClick={closeMenus}
+            className={({ isActive }) =>
+                `bph-nav-link${isActive ? ' is-active' : ''}`
+            }
+        >
+            {label}
+        </NavLink>
+    ));
+
+    return (
+        <header className="bph-header" ref={headerRef}>
+            <div className="bph-container">
+                {/* Logo */}
+                <Link
+                    to="/"
+                    className="bph-brand"
+                    onClick={closeMenus}
+                >
+                    <span className="bph-brand-icon">
+                        <Icon name="book" />
+                    </span>
+
+                    <span className="bph-brand-copy">
+                        <strong>
+                            Book<span>Paradise</span>
+                        </strong>
+                        <small>Mở sách, mở thế giới</small>
+                    </span>
+                </Link>
+
+                {/* Menu máy tính */}
+                <nav
+                    className="bph-desktop-nav"
+                    aria-label="Menu chính"
+                >
+                    {menuLinks}
+                </nav>
+
+                <div className="bph-tools">
+                    {/* Yêu thích */}
+                    <Link
+                        to="/yeu-thich"
+                        className="bph-icon-button"
+                        onClick={closeMenus}
+                        aria-label={`Yêu thích, ${wishlist.length} sản phẩm`}
+                        title="Yêu thích"
+                    >
+                        <Icon name="heart" />
+
+                        <span className="bph-badge">
+                            {wishlist.length > 99
+                                ? '99+'
+                                : wishlist.length}
+                        </span>
+                    </Link>
+
+                    {/* Giỏ hàng */}
+                    <Link
+                        to="/gio-hang"
+                        className="bph-icon-button"
+                        onClick={closeMenus}
+                        aria-label={`Giỏ hàng, ${totalItems} sản phẩm`}
+                        title="Giỏ hàng"
+                    >
+                        <Icon name="cart" />
+
+                        <span className="bph-badge">
+                            {totalItems > 99 ? '99+' : totalItems}
+                        </span>
+                    </Link>
+
+                    {/* Tài khoản */}
+                    <div className="bph-account">
+                        {user ? (
+                            <>
+                                <button
+                                    type="button"
+                                    className="bph-account-button"
+                                    aria-label="Tài khoản"
+                                    aria-expanded={accountOpen}
+                                    aria-controls={accountId}
+                                    onClick={() => {
+                                        setAccountOpen(!accountOpen);
+                                        setMobileOpen(false);
+                                    }}
                                 >
-                                    Đăng nhập
-                                </Link>
-                            )}
-                        </div>
+                                    <span className="bph-avatar">
+                                        {initials}
+                                    </span>
+
+                                    <span className="bph-account-label">
+                                        Tài khoản
+                                    </span>
+
+                                    <span className="bph-account-chevron">
+                                        <Icon name="down" />
+                                    </span>
+                                </button>
+
+                                {accountOpen && (
+                                    <div
+                                        id={accountId}
+                                        className="bph-account-panel"
+                                    >
+                                        <div className="bph-user-info">
+                                            <small>Xin chào,</small>
+                                            <strong>{displayName}</strong>
+
+                                            {user.email &&
+                                                user.email !== displayName && (
+                                                    <span>{user.email}</span>
+                                                )}
+                                        </div>
+
+                                        {user.role === 'Admin' && (
+                                            <Link
+                                                to="/admin"
+                                                className="bph-panel-item"
+                                                onClick={closeMenus}
+                                            >
+                                                <Icon name="admin" />
+                                                Trang quản trị
+                                            </Link>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            className="bph-panel-item bph-logout"
+                                            onClick={handleLogout}
+                                        >
+                                            <Icon name="logout" />
+                                            Đăng xuất
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <Link
+                                to="/dang-nhap"
+                                className="bph-login"
+                                onClick={closeMenus}
+                                aria-label="Đăng nhập"
+                                title="Đăng nhập"
+                            >
+                                <Icon name="user" />
+                                <span>Đăng nhập</span>
+                            </Link>
+                        )}
                     </div>
+
+                    {/* Nút menu điện thoại */}
+                    <button
+                        type="button"
+                        className="bph-menu-button"
+                        aria-label={
+                            mobileOpen ? 'Đóng menu' : 'Mở menu'
+                        }
+                        aria-expanded={mobileOpen}
+                        aria-controls={mobileId}
+                        onClick={() => {
+                            setMobileOpen(!mobileOpen);
+                            setAccountOpen(false);
+                        }}
+                    >
+                        <Icon name={mobileOpen ? 'close' : 'menu'} />
+                    </button>
                 </div>
             </div>
+
+            {mobileOpen && (
+                <nav
+                    id={mobileId}
+                    className="bph-mobile-nav"
+                    aria-label="Menu điện thoại"
+                >
+                    {menuLinks}
+                </nav>
+            )}
         </header>
     );
-};
-
-export default Header;
+}

@@ -1,0 +1,521 @@
+.bph-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    border-bottom: 1px solid #f0e9e9;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 5px 24px #40242906;
+    backdrop-filter: blur(16px);
+
+    color: #352c2e;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.bph-header *,
+.bph-header *::before,
+.bph-header *::after {
+    box-sizing: border-box;
+}
+
+.bph-header a {
+    text-decoration: none;
+}
+
+.bph-header button {
+    font-family: inherit;
+}
+
+.bph-header svg {
+    display: block;
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+}
+
+/* Khung header */
+.bph-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+
+    max-width: 1320px;
+    min-height: 80px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Logo */
+.bph-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex-shrink: 0;
+    color: #352c2e;
+}
+
+.bph-brand-icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+
+    background: #b52e3b;
+    color: #fff;
+    box-shadow: 0 5px 12px #b52e3b20;
+}
+
+.bph-brand-icon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.bph-brand-copy {
+    display: flex;
+    flex-direction: column;
+}
+
+.bph-brand-copy strong {
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.8px;
+}
+
+.bph-brand-copy strong span {
+    color: #b52e3b;
+}
+
+.bph-brand-copy small {
+    margin-top: 4px;
+    color: #95878b;
+    font-size: 10px;
+    letter-spacing: 0.6px;
+}
+
+/* Menu chính */
+.bph-desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bph-nav-link {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+
+    color: #695b60;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    transition: color 0.2s, background 0.2s;
+}
+
+.bph-nav-link:hover {
+    color: #b52e3b;
+    background: #fff7f7;
+}
+
+.bph-nav-link.is-active {
+    color: #b52e3b;
+    background: #fff0f2;
+}
+
+/* Các nút bên phải */
+.bph-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.bph-icon-button,
+.bph-menu-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+    padding: 0;
+
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #64565c;
+    cursor: pointer;
+
+    transition: color 0.2s, background 0.2s;
+}
+
+.bph-icon-button:hover,
+.bph-menu-button:hover {
+    color: #b52e3b;
+    background: #fff0f2;
+}
+
+.bph-badge {
+    position: absolute;
+    top: 0;
+    right: -1px;
+
+    display: grid;
+    place-items: center;
+
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+
+    border: 2px solid #fff;
+    border-radius: 20px;
+    background: #b52e3b;
+    color: #fff;
+
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Nút tài khoản */
+.bph-account {
+    position: relative;
+    margin-left: 6px;
+    padding-left: 14px;
+    border-left: 1px solid #eee5e7;
+}
+
+.bph-account-button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 3px;
+
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #57464d;
+    cursor: pointer;
+
+    transition: background 0.2s;
+}
+
+.bph-account-button:hover {
+    background: #fff5f6;
+}
+
+.bph-avatar {
+    display: grid;
+    place-items: center;
+
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+
+    border: 1px solid #f1d5da;
+    border-radius: 50%;
+    background: #fff0f2;
+    color: #a62a38;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.bph-account-label {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bph-account-chevron svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s;
+}
+
+.bph-account-button[aria-expanded="true"]
+.bph-account-chevron svg {
+    transform: rotate(180deg);
+}
+
+/* Menu tài khoản xổ xuống */
+.bph-account-panel {
+    position: absolute;
+    top: calc(100% + 17px);
+    right: 0;
+
+    width: 275px;
+    max-width: calc(100vw - 32px);
+    padding: 10px;
+
+    border: 1px solid #eee5e7;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 14px 45px #46222c1c;
+
+    animation: bph-panel-in 0.18s ease-out;
+}
+
+.bph-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    margin-bottom: 7px;
+    padding: 10px 10px 15px;
+    border-bottom: 1px solid #f2ecee;
+    overflow-wrap: anywhere;
+}
+
+.bph-user-info small {
+    color: #9c8c92;
+    font-size: 11px;
+}
+
+.bph-user-info strong {
+    color: #352c2e;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.bph-user-info span {
+    color: #8a7d82;
+    font-size: 12px;
+}
+
+.bph-panel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    width: 100%;
+    padding: 11px 10px;
+
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #66565d;
+
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+
+    transition: background 0.2s, color 0.2s;
+}
+
+.bph-panel-item svg {
+    width: 18px;
+    height: 18px;
+}
+
+.bph-panel-item:hover {
+    background: #fff4f5;
+    color: #b52e3b;
+}
+
+.bph-logout {
+    color: #b52e3b;
+}
+
+/* Đăng nhập */
+.bph-login {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 40px;
+    padding: 9px 15px;
+
+    border: 1px solid #b52e3b;
+    border-radius: 11px;
+    background: #b52e3b;
+    color: #fff;
+
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    transition: background 0.2s;
+}
+
+.bph-login:hover {
+    background: #962330;
+}
+
+.bph-login svg {
+    width: 18px;
+    height: 18px;
+}
+
+.bph-menu-button,
+.bph-mobile-nav {
+    display: none;
+}
+
+/* Hỗ trợ thao tác bằng bàn phím */
+.bph-header a:focus-visible,
+.bph-header button:focus-visible {
+    outline: 3px solid #b52e3b66;
+    outline-offset: 3px;
+}
+
+@keyframes bph-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Máy tính bảng và màn hình nhỏ */
+@media (max-width: 1120px) {
+    .bph-desktop-nav {
+        display: none;
+    }
+
+    .bph-menu-button {
+        display: inline-flex;
+    }
+
+    .bph-mobile-nav {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+
+        display: grid;
+        gap: 4px;
+        padding: 14px 24px 20px;
+
+        border-bottom: 1px solid #eee5e7;
+        background: #fff;
+        box-shadow: 0 14px 24px #4024290a;
+
+        animation: bph-panel-in 0.18s ease-out;
+    }
+
+    .bph-mobile-nav .bph-nav-link {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+}
+
+/* Điện thoại */
+@media (max-width: 600px) {
+    .bph-container {
+        min-height: 70px;
+        gap: 10px;
+        padding: 0 16px;
+    }
+
+    .bph-brand {
+        gap: 8px;
+    }
+
+    .bph-brand-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+    }
+
+    .bph-brand-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .bph-brand-copy strong {
+        font-size: 18px;
+    }
+
+    .bph-brand-copy small,
+    .bph-account-label,
+    .bph-account-chevron,
+    .bph-login span {
+        display: none;
+    }
+
+    .bph-tools {
+        gap: 5px;
+    }
+
+    .bph-icon-button,
+    .bph-menu-button {
+        width: 34px;
+        height: 36px;
+        border-radius: 9px;
+    }
+
+    .bph-header svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .bph-account {
+        margin-left: 2px;
+        padding-left: 7px;
+    }
+
+    .bph-account-button {
+        padding: 0;
+    }
+
+    .bph-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 11px;
+    }
+
+    .bph-badge {
+        top: -1px;
+        right: -2px;
+        min-width: 17px;
+        height: 17px;
+        font-size: 8px;
+    }
+
+    .bph-login {
+        width: 34px;
+        min-height: 36px;
+        padding: 0;
+        border-radius: 9px;
+    }
+
+    .bph-account-panel {
+        top: calc(100% + 19px);
+        right: -39px;
+    }
+
+    .bph-mobile-nav {
+        padding: 12px 16px 18px;
+    }
+}
+
+@media (max-width: 360px) {
+    .bph-container {
+        padding: 0 12px;
+    }
+
+    .bph-brand-icon {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bph-header *,
+    .bph-header *::before,
+    .bph-header *::after {
+        transition: none;
+        animation: none;
+    }
+}
