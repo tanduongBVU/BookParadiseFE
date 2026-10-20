@@ -1,8 +1,74 @@
 import { useContext, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import { createDonHang, createChiTietDonHang, applyVoucher } from '../../services/orderService';
+import './Checkout.css';
+
+const PHONE_REGEX = /^(0|\+84)\d{9}$/;
+const fmt = (n) => n.toLocaleString('vi-VN') + ' đ';
+
+/* ---------- Icon nhỏ (SVG nội tuyến, không cần cài thư viện) ---------- */
+const Icon = ({ children, size = 18 }) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        {children}
+    </svg>
+);
+
+const IconUser = () => (
+    <Icon>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+    </Icon>
+);
+const IconPhone = () => (
+    <Icon>
+        <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
+    </Icon>
+);
+const IconMail = () => (
+    <Icon>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+    </Icon>
+);
+const IconPin = () => (
+    <Icon>
+        <path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" />
+        <circle cx="12" cy="9" r="2.5" />
+    </Icon>
+);
+const IconNote = () => (
+    <Icon>
+        <path d="M5 4h14v12l-5 5H5z" />
+        <path d="M14 21v-5h5" />
+    </Icon>
+);
+const IconTruck = () => (
+    <Icon size={22}>
+        <path d="M2 6h11v10H2z" />
+        <path d="M13 9h4l4 4v3h-8" />
+        <circle cx="6.5" cy="17.5" r="1.8" />
+        <circle cx="17.5" cy="17.5" r="1.8" />
+    </Icon>
+);
+const IconWallet = () => (
+    <Icon size={22}>
+        <path d="M3 7a2 2 0 0 1 2-2h13v4" />
+        <rect x="3" y="7" width="18" height="13" rx="2" />
+        <circle cx="16.5" cy="13.5" r="1.2" />
+    </Icon>
+);
 
 const Checkout = () => {
     const { cart, clearCart } = useContext(CartContext);
@@ -12,6 +78,12 @@ const Checkout = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [hoTen, setHoTen] = useState(user?.hoTen || '');
+    const [soDienThoai, setSoDienThoai] = useState(user?.soDienThoai || '');
+    const [diaChi, setDiaChi] = useState(user?.diaChi || '');
+    const [ghiChu, setGhiChu] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+
     const [voucherCodeInput, setVoucherCodeInput] = useState('');
     const [appliedVoucher, setAppliedVoucher] = useState(null);
     const [voucherError, setVoucherError] = useState('');
@@ -19,16 +91,28 @@ const Checkout = () => {
 
     useEffect(() => {
         if (!user) {
-            alert("Bạn cần đăng nhập để thanh toán!");
+            alert('Bạn cần đăng nhập để thanh toán!');
             navigate('/dang-nhap');
         } else if (cart.length === 0) {
             navigate('/sach');
         }
     }, [user, cart, navigate]);
 
-    const tongTienGoc = cart.reduce((total, item) => total + (item.gia * item.soMua), 0);
+    const tongTienGoc = cart.reduce((total, item) => total + item.gia * item.soMua, 0);
+    const tongSoLuong = cart.reduce((total, item) => total + item.soMua, 0);
     const soTienGiam = appliedVoucher ? appliedVoucher.soTienGiam : 0;
-    const tongTienThanhToan = tongTienGoc - soTienGiam > 0 ? tongTienGoc - soTienGiam : 0;
+    const tongTienThanhToan = Math.max(tongTienGoc - soTienGiam, 0);
+
+    const validate = () => {
+        const errs = {};
+        if (!hoTen.trim()) errs.hoTen = 'Nhập họ tên người nhận.';
+        if (!soDienThoai.trim()) errs.soDienThoai = 'Nhập số điện thoại.';
+        else if (!PHONE_REGEX.test(soDienThoai.trim())) errs.soDienThoai = 'Số điện thoại chưa đúng (VD: 0912345678).';
+        if (!diaChi.trim()) errs.diaChi = 'Nhập địa chỉ giao hàng.';
+        else if (diaChi.trim().length < 10) errs.diaChi = 'Địa chỉ quá ngắn, hãy ghi rõ số nhà, đường, phường/xã, quận/huyện, tỉnh/thành.';
+        setFieldErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
 
     const handleApplyVoucher = async () => {
         if (!voucherCodeInput.trim()) return;
@@ -48,24 +132,34 @@ const Checkout = () => {
 
     const handleDatHang = async (e) => {
         e.preventDefault();
-        setLoading(true);
         setError('');
+        if (!validate()) return;
 
+        setLoading(true);
         try {
-            const donHangResult = await createDonHang(user.id || user.maNguoiDung, tongTienThanhToan, appliedVoucher?.code, soTienGiam);
-            const newMaDonHang = donHangResult.maDonHang; 
+            const donHangResult = await createDonHang(
+                user.id || user.maNguoiDung,
+                tongTienThanhToan,
+                appliedVoucher?.code,
+                soTienGiam,
+                {
+                    hoTenNguoiNhan: hoTen.trim(),
+                    soDienThoai: soDienThoai.trim(),
+                    diaChiGiaoHang: diaChi.trim(),
+                    ghiChu: ghiChu.trim(),
+                }
+            );
+            const newMaDonHang = donHangResult.maDonHang;
 
             for (const item of cart) {
-                // Đảm bảo gửi đúng item.gia (đã tính giá cộng thêm của biến thể)
                 await createChiTietDonHang(newMaDonHang, item.maSach, item.soMua, item.gia);
             }
 
             clearCart();
             alert(`Đặt hàng thành công! Mã đơn hàng của bạn là #${newMaDonHang}`);
-            navigate('/'); 
-            
+            navigate('/');
         } catch (err) {
-            setError(err || "Có lỗi xảy ra trong quá trình đặt hàng.");
+            setError(err || 'Có lỗi xảy ra trong quá trình đặt hàng.');
         } finally {
             setLoading(false);
         }
@@ -74,122 +168,211 @@ const Checkout = () => {
     if (!user || cart.length === 0) return null;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Thanh Toán</h1>
-            
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-                <div className="lg:w-2/3 w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                    <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-4">Thông tin giao hàng</h2>
-                    
-                    {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200">{error}</div>
-                    )}
-
-                    <form onSubmit={handleDatHang} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Họ và Tên người nhận</label>
-                            <input 
-                                type="text" 
-                                value={user.hoTen || user.email}
-                                disabled
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                            />
-                        </div>
-                        
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</label>
-                            <div className="border border-red-500 bg-red-50 rounded-lg p-4 flex items-center gap-3">
-                                <input type="radio" checked readOnly className="h-5 w-5 text-red-600" />
-                                <span className="font-bold text-red-700">Thanh toán tiền mặt khi nhận hàng (COD)</span>
-                            </div>
-                        </div>
-
-                        <div className="pt-4 border-t">
-                            <button 
-                                type="submit" 
-                                disabled={loading}
-                                className={`w-full py-4 rounded-xl text-white font-bold text-lg transition shadow-lg flex justify-center items-center ${loading ? 'bg-red-400 cursor-wait' : 'bg-red-600 hover:bg-red-700 active:scale-95'}`}
-                            >
-                                {loading ? 'Đang xử lý đặt hàng...' : 'Xác nhận Đặt Hàng'}
-                            </button>
-                        </div>
-                    </form>
+        <div className="co">
+            {/* Banner kệ sách */}
+            <div className="co-hero">
+                <div className="co-hero-in">
+                    <h1 className="co-title">Thanh toán</h1>
+                    <p className="co-sub">Điền thông tin nhận hàng và xác nhận đơn.</p>
                 </div>
+            </div>
 
-                <div className="lg:w-1/3 w-full bg-gray-50 rounded-xl shadow-inner border border-gray-200 p-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-4">Tóm tắt đơn hàng</h2>
-                    
-                    <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
-                        {cart.map(item => (
-                            <div key={item.cartId} className="flex gap-4 bg-white p-2 rounded-lg border border-gray-100">
-                                {/* FIX LỖI ẢNH: Đã thêm https://localhost:7010 */}
-                                <img 
-                                    src={item.hinhAnh ? `https://localhost:7010${item.hinhAnh}` : "https://via.placeholder.com/60x80?text=Sách"} 
-                                    alt={item.tenSach} 
-                                    className="w-14 h-20 object-cover rounded border border-gray-200"
-                                />
-                                <div className="flex-1">
-                                    <h4 className="font-medium text-gray-800 text-sm line-clamp-2">{item.tenSach}</h4>
-                                    
-                                    {/* Hiển thị thêm biến thể nếu có */}
-                                    {item.tenBienThe && (
-                                        <p className="text-xs text-blue-600 font-medium mt-0.5">{item.tenBienThe}</p>
-                                    )}
-                                    
-                                    <div className="flex justify-between items-center mt-1">
-                                        <p className="text-gray-500 text-xs">SL: {item.soMua}</p>
-                                        <p className="text-red-600 font-bold text-sm">{(item.gia * item.soMua).toLocaleString('vi-VN')} đ</p>
+            <div className="co-wrap">
+                <div className="co-grid">
+                    {/* ===== Form ===== */}
+                    <form className="co-form" onSubmit={handleDatHang} noValidate>
+                        {error && <div className="co-alert">{error}</div>}
+
+                        <section className="co-section">
+                            <div className="co-section-head">
+                                <span className="co-badge"><IconTruck /></span>
+                                <div>
+                                    <h2 className="co-section-title">Thông tin giao hàng</h2>
+                                    <p className="co-section-desc">Đơn sẽ được giao đến địa chỉ này.</p>
+                                </div>
+                            </div>
+
+                            <div className="co-fields">
+                                <div className="co-field-full">
+                                    <label className="co-label" htmlFor="hoTen">Họ và tên người nhận</label>
+                                    <div className="co-ico">
+                                        <IconUser />
+                                        <input
+                                            id="hoTen"
+                                            className={`co-input ${fieldErrors.hoTen ? 'is-error' : ''}`}
+                                            type="text"
+                                            placeholder="Nguyễn Văn A"
+                                            value={hoTen}
+                                            onChange={(e) => setHoTen(e.target.value)}
+                                        />
+                                    </div>
+                                    {fieldErrors.hoTen && <p className="co-msg is-error">{fieldErrors.hoTen}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="co-label" htmlFor="sdt">Số điện thoại</label>
+                                    <div className="co-ico">
+                                        <IconPhone />
+                                        <input
+                                            id="sdt"
+                                            className={`co-input ${fieldErrors.soDienThoai ? 'is-error' : ''}`}
+                                            type="tel"
+                                            inputMode="tel"
+                                            maxLength={12}
+                                            placeholder="0912345678"
+                                            value={soDienThoai}
+                                            onChange={(e) => setSoDienThoai(e.target.value.replace(/[^\d+]/g, ''))}
+                                        />
+                                    </div>
+                                    {fieldErrors.soDienThoai && <p className="co-msg is-error">{fieldErrors.soDienThoai}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="co-label" htmlFor="email">Email</label>
+                                    <div className="co-ico">
+                                        <IconMail />
+                                        <input id="email" className="co-input" type="text" value={user.email || ''} disabled />
+                                    </div>
+                                </div>
+
+                                <div className="co-field-full">
+                                    <label className="co-label" htmlFor="diaChi">Địa chỉ giao hàng</label>
+                                    <div className="co-ico is-area">
+                                        <IconPin />
+                                        <textarea
+                                            id="diaChi"
+                                            className={`co-textarea ${fieldErrors.diaChi ? 'is-error' : ''}`}
+                                            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                                            value={diaChi}
+                                            onChange={(e) => setDiaChi(e.target.value)}
+                                        />
+                                    </div>
+                                    {fieldErrors.diaChi && <p className="co-msg is-error">{fieldErrors.diaChi}</p>}
+                                </div>
+
+                                <div className="co-field-full">
+                                    <label className="co-label" htmlFor="ghiChu">
+                                        Ghi chú <span className="co-opt">(không bắt buộc)</span>
+                                    </label>
+                                    <div className="co-ico">
+                                        <IconNote />
+                                        <input
+                                            id="ghiChu"
+                                            className="co-input"
+                                            type="text"
+                                            placeholder="VD: Gọi trước khi giao, giao giờ hành chính"
+                                            value={ghiChu}
+                                            onChange={(e) => setGhiChu(e.target.value)}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        </section>
 
-                    <div className="mb-6 border-t border-b border-gray-200 py-4">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Mã giảm giá</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                placeholder="Nhập mã (VD: SALE50)" 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none uppercase"
-                                value={voucherCodeInput}
-                                onChange={e => setVoucherCodeInput(e.target.value.toUpperCase())}
-                            />
-                            <button 
-                                type="button"
-                                onClick={handleApplyVoucher}
-                                disabled={isApplyingVoucher || !voucherCodeInput}
-                                className="bg-gray-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-400"
-                            >
-                                Áp dụng
-                            </button>
-                        </div>
-                        {voucherError && <p className="text-red-500 text-xs mt-2">{voucherError}</p>}
-                        
-                        {appliedVoucher && (
-                            <div className="mt-3 flex justify-between items-center bg-green-50 border border-green-200 p-3 rounded-lg">
-                                <span className="text-green-700 font-bold text-sm">Đã áp dụng mã: {appliedVoucher.code}</span>
-                                <button type="button" onClick={() => setAppliedVoucher(null)} className="text-red-500 text-xs hover:underline">Gỡ bỏ</button>
+                        <section className="co-section">
+                            <div className="co-section-head">
+                                <span className="co-badge"><IconWallet /></span>
+                                <div>
+                                    <h2 className="co-section-title">Phương thức thanh toán</h2>
+                                    <p className="co-section-desc">Hiện chỉ hỗ trợ thanh toán khi nhận hàng.</p>
+                                </div>
                             </div>
-                        )}
-                    </div>
+                            <div className="co-pay">
+                                <span className="co-pay-dot" />
+                                <div>
+                                    <div className="co-pay-name">Thanh toán khi nhận hàng (COD)</div>
+                                    <div className="co-pay-note">Trả tiền mặt cho nhân viên giao hàng.</div>
+                                </div>
+                            </div>
+                        </section>
 
-                    <div className="space-y-3">
-                        <div className="flex justify-between text-gray-600 text-sm">
-                            <span>Tạm tính</span>
-                            <span className="font-medium">{tongTienGoc.toLocaleString('vi-VN')} đ</span>
+                        <button className="co-submit" type="submit" disabled={loading}>
+                            <span>{loading ? 'Đang đặt hàng...' : 'Xác nhận đặt hàng'}</span>
+                            {!loading && <span className="co-submit-total">{fmt(tongTienThanhToan)}</span>}
+                        </button>
+                    </form>
+
+                    {/* ===== Hóa đơn ===== */}
+                    <aside className="co-receipt">
+                        <div className="co-receipt-head">
+                            <h2 className="co-receipt-title">Đơn hàng của bạn</h2>
+                            <span className="co-receipt-count">{tongSoLuong} sản phẩm</span>
                         </div>
-                        {appliedVoucher && (
-                            <div className="flex justify-between text-green-600 font-medium text-sm">
-                                <span>Giảm giá Voucher</span>
-                                <span>- {soTienGiam.toLocaleString('vi-VN')} đ</span>
+
+                        <ul className="co-items">
+                            {cart.map((item) => (
+                                <li key={item.cartId} className="co-item">
+                                    <img
+                                        className="co-item-img"
+                                        src={item.hinhAnh ? `https://localhost:7010${item.hinhAnh}` : 'https://via.placeholder.com/60x80?text=Sách'}
+                                        alt={item.tenSach}
+                                    />
+                                    <div className="co-item-body">
+                                        <h4 className="co-item-name">{item.tenSach}</h4>
+                                        {item.tenBienThe && <span className="co-item-variant">{item.tenBienThe}</span>}
+                                        <div className="co-item-row">
+                                            <span>SL: {item.soMua}</span>
+                                            <span className="co-item-price">{fmt(item.gia * item.soMua)}</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="co-voucher">
+                            <label className="co-label" htmlFor="voucher">Mã giảm giá</label>
+                            <div className="co-voucher-row">
+                                <input
+                                    id="voucher"
+                                    className="co-input"
+                                    type="text"
+                                    placeholder="Nhập mã (VD: SALE50)"
+                                    value={voucherCodeInput}
+                                    onChange={(e) => setVoucherCodeInput(e.target.value.toUpperCase())}
+                                />
+                                <button
+                                    type="button"
+                                    className="co-btn-dark"
+                                    onClick={handleApplyVoucher}
+                                    disabled={isApplyingVoucher || !voucherCodeInput}
+                                >
+                                    {isApplyingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
+                                </button>
                             </div>
-                        )}
-                        <div className="flex justify-between items-end pt-3 border-t">
-                            <span className="text-lg font-bold text-gray-900">Tổng cộng</span>
-                            <span className="text-2xl font-bold text-red-600">{tongTienThanhToan.toLocaleString('vi-VN')} đ</span>
+                            {voucherError && <p className="co-msg is-error">{voucherError}</p>}
+                            {appliedVoucher && (
+                                <div className="co-voucher-ok">
+                                    <span>Đã áp dụng mã {appliedVoucher.code}</span>
+                                    <button type="button" className="co-link" onClick={() => setAppliedVoucher(null)}>
+                                        Gỡ bỏ
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    </div>
+
+                        <dl className="co-totals">
+                            <div className="co-totals-row">
+                                <dt>Tạm tính</dt>
+                                <dd>{fmt(tongTienGoc)}</dd>
+                            </div>
+                            {appliedVoucher && (
+                                <div className="co-totals-row is-discount">
+                                    <dt>Giảm giá voucher</dt>
+                                    <dd>- {fmt(soTienGiam)}</dd>
+                                </div>
+                            )}
+                            <div className="co-totals-row">
+                                <dt>Phí vận chuyển</dt>
+                                <dd>Miễn phí</dd>
+                            </div>
+                            <div className="co-totals-final">
+                                <dt>Tổng cộng</dt>
+                                <dd>{fmt(tongTienThanhToan)}</dd>
+                            </div>
+                        </dl>
+
+                        <div className="co-barcode" aria-hidden="true" />
+                    </aside>
                 </div>
             </div>
         </div>

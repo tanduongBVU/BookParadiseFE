@@ -1,195 +1,620 @@
-import { useState, useEffect, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import {
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
+
+import { Link, useParams } from 'react-router-dom';
 import { getSachById } from '../../services/sachService';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
+import './ProductDetail.css';
 
-const ProductDetail = () => {
-    const { id } = useParams(); 
-    
+const API_URL = 'https://localhost:7010';
+
+const money = (value) =>
+    `${(Number(value) || 0).toLocaleString('vi-VN')} đ`;
+
+const initial = (name) =>
+    String(name || 'B').trim().charAt(0).toUpperCase() || 'B';
+
+function Icon({ name }) {
+    const paths = {
+        book: 'M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1ZM12 6v14',
+        cart: 'M3 3h2l3 12h10l3-9H6M9 19h.01M18 19h.01',
+        chat: 'M21 11a8 8 0 0 1-8 8H7l-5 3V11a9 9 0 0 1 19 0ZM7 10h10M7 14h6',
+    };
+
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d={paths[name]} />
+        </svg>
+    );
+}
+
+export default function ProductDetail() {
+    const { id } = useParams();
+
+    // Hooks luôn đặt trước các lệnh return
+    const { addToCart } = useContext(CartContext);
+    const { user } = useContext(AuthContext);
+
     const [sach, setSach] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [quantity, setQuantity] = useState(1); 
-    
-    // State lưu biến thể đang chọn
+    const [error, setError] = useState('');
+    const [retry, setRetry] = useState(0);
+
+    const [quantity, setQuantity] = useState(1);
     const [selectedVariant, setSelectedVariant] = useState(null);
+    const [imageError, setImageError] = useState(false);
 
-    const { user } = useContext(AuthContext); 
     const [comments, setComments] = useState([]);
-    const [newComment, setNewComment] = useState("");
+    const [commentsLoading, setCommentsLoading] = useState(true);
+    const [commentsError, setCommentsError] = useState('');
+    const [newComment, setNewComment] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    const [feedback, setFeedback] = useState(null);
 
-    const fetchChiTiet = async () => {
-        try {
-            setLoading(true); 
-            const data = await getSachById(id);
-            setSach(data);
-            
-            // Nếu sách có biến thể, tự động chọn biến thể đầu tiên làm mặc định
-            if (data.cacBienThe && data.cacBienThe.length > 0) {
-                setSelectedVariant(data.cacBienThe[0]);
-            }
-            
-            setLoading(false);
-        } catch (err) {
-            setError("Không tìm thấy thông tin sách hoặc có lỗi từ server.");
-            setLoading(false);
-        }
-    };
+    const postRequest = useRef(null);
 
-    const fetchComments = async () => {
-        try {
-            const res = await fetch(`https://localhost:7010/api/sach/${id}/binhluan`);
-            if (res.ok) setComments(await res.json());
-        } catch (err) { console.error("Lỗi tải bình luận", err); }
-    };
-
+    // Tải thông tin sách
     useEffect(() => {
-        fetchChiTiet();
-        fetchComments();
+        let active = true;
+
+        setLoading(true);
+        setError('');
+        setSach(null);
+        setQuantity(1);
+        setSelectedVariant(null);
+        setImageError(false);
+
+        const loadBook = async () => {
+            try {
+                const data = await getSachById(id);
+
+                if (!data) {
+                    throw new Error('NOT_FOUND');
+                }
+
+                if (active) {
+                    setSach(data);
+                    setSelectedVariant(data.cacBienThe?.[0] || null);
+                }
+            } catch {
+                if (active) {
+                    setError(
+                        'Không thể tải thông tin cuốn sách này. Bạn vui lòng thử lại.'
+                    );
+                }
+            } finally {
+                if (active) setLoading(false);
+            }
+        };
+
+        loadBook();
+
+        return () => {
+            active = false;
+        };
+    }, [id, retry]);
+
+    // Tải đánh giá
+    useEffect(() => {
+        const controller = new AbortController();
+
+        setComments([]);
+        setCommentsLoading(true);
+        setCommentsError('');
+        setNewComment('');
+        setFeedback(null);
+        setIsSending(false);
+
+        const loadComments = async () => {
+            try {
+                const res = await fetch(
+                    `${API_URL}/api/sach/${id}/binhluan`,
+                    { signal: controller.signal }
+                );
+
+                if (!res.ok) {
+                    throw new Error('LOAD_FAILED');
+                }
+
+                const data = await res.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error('INVALID_DATA');
+                }
+
+                if (!controller.signal.aborted) {
+                    setComments(data);
+                }
+            } catch {
+                if (!controller.signal.aborted) {
+                    setCommentsError(
+                        'Chưa tải được đánh giá. Bạn có thể thử tải lại trang.'
+                    );
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setCommentsLoading(false);
+                }
+            }
+        };
+
+        loadComments();
+
+        return () => {
+            controller.abort();
+            postRequest.current?.abort();
+        };
     }, [id]);
 
-    // Lấy tồn kho của biến thể (nếu có), ngược lại lấy của sách gốc
-    const currentStock = selectedVariant ? selectedVariant.soLuong : (sach?.soLuong || 0);
+    const currentStock = Math.max(
+        0,
+        Math.floor(
+            Number(
+                selectedVariant
+                    ? selectedVariant.soLuong
+                    : sach?.soLuong
+            ) || 0
+        )
+    );
+
     const isAvailable = currentStock > 0;
 
-    const handleIncrease = () => {
-        if (sach && quantity < currentStock) setQuantity(prev => prev + 1);
-    };
-    const handleDecrease = () => {
-        if (quantity > 1) setQuantity(prev => prev - 1);
-    };
+    // Giá gốc + phụ phí của phiên bản
+    const displayPrice =
+        (Number(sach?.gia) || 0) +
+        (Number(selectedVariant?.giaCongThem) || 0);
 
     const handleSubmitComment = async (e) => {
         e.preventDefault();
-        if (!user) return alert("Bạn cần đăng nhập để bình luận!");
-        if (!newComment.trim()) return;
+
+        if (isSending) return;
+
+        if (!user || !newComment.trim()) {
+            setFeedback({
+                type: 'error',
+                text: 'Bạn cần đăng nhập và nhập nội dung đánh giá.',
+            });
+            return;
+        }
+
+        const controller = new AbortController();
+        postRequest.current = controller;
+
+        setIsSending(true);
+        setFeedback(null);
 
         try {
-            const res = await fetch('https://localhost:7010/api/binhluan', {
+            const res = await fetch(`${API_URL}/api/binhluan`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ maNguoiDung: user.id || user.maNguoiDung, maSach: parseInt(id), noiDung: newComment })
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                signal: controller.signal,
+                body: JSON.stringify({
+                    maNguoiDung: user.id || user.maNguoiDung,
+                    maSach: Number(id),
+                    noiDung: newComment.trim(),
+                }),
             });
-            if (res.ok) {
-                alert("Bình luận của bạn đã được gửi và đang chờ Admin duyệt!");
-                setNewComment("");
+
+            if (!res.ok) {
+                throw new Error('SEND_FAILED');
             }
-        } catch (error) { alert("Lỗi gửi bình luận"); }
+
+            if (!controller.signal.aborted) {
+                setNewComment('');
+
+                setFeedback({
+                    type: 'success',
+                    text: 'Đã gửi đánh giá! Nội dung của bạn đang chờ quản trị viên duyệt.',
+                });
+            }
+        } catch {
+            if (!controller.signal.aborted) {
+                setFeedback({
+                    type: 'error',
+                    text: 'Chưa gửi được đánh giá. Bạn vui lòng thử lại sau.',
+                });
+            }
+        } finally {
+            if (!controller.signal.aborted) {
+                setIsSending(false);
+            }
+
+            if (postRequest.current === controller) {
+                postRequest.current = null;
+            }
+        }
     };
 
-    if (loading) return <div className="flex justify-center items-center min-h-[50vh]">Đang tải thông tin...</div>;
-    if (error || !sach) return <div className="text-center text-red-500 mt-10">{error}</div>;
+    if (loading) {
+        return (
+            <div className="bp-detail">
+                <div
+                    className="bpd-container bpd-state"
+                    role="status"
+                >
+                    <span
+                        className="bpd-spinner"
+                        aria-hidden="true"
+                    />
+                    <p>Đang tải thông tin sách...</p>
+                </div>
+            </div>
+        );
+    }
 
-    const { addToCart } = useContext(CartContext);
-    
-    // Tính giá hiển thị = giá gốc + giá biến thể
-    const displayPrice = sach.gia + (selectedVariant ? selectedVariant.giaCongThem : 0);
+    if (error || !sach) {
+        return (
+            <div className="bp-detail">
+                <div
+                    className="bpd-container bpd-state"
+                    role="alert"
+                >
+                    <Icon name="book" />
+                    <h2>Chưa tải được sách</h2>
+                    <p>
+                        {error || 'Không tìm thấy cuốn sách này.'}
+                    </p>
+
+                    <button
+                        type="button"
+                        className="bpd-primary"
+                        onClick={() => setRetry((value) => value + 1)}
+                    >
+                        Thử lại
+                    </button>
+
+                    <Link to="/sach" className="bpd-text-link">
+                        Về cửa hàng
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    const imageUrl = sach.hinhAnh
+        ? /^https?:\/\//i.test(sach.hinhAnh)
+            ? sach.hinhAnh
+            : `${API_URL}/${sach.hinhAnh.replace(/^\/+/, '')}`
+        : '';
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <nav className="mb-6 text-sm flex items-center">
-                <Link to="/" className="text-gray-500 hover:text-red-600 transition">Trang chủ</Link>
-                <span className="mx-2 text-gray-400">/</span>
-                <Link to="/sach" className="text-gray-500 hover:text-red-600 transition">Cửa hàng</Link>
-                <span className="mx-2 text-gray-400">/</span>
-                <span className="text-gray-800 font-medium truncate">{sach.tenSach}</span>
-            </nav>
+        <div className="bp-detail">
+            <div className="bpd-container">
+                {/* Đường dẫn */}
+                <nav
+                    className="bpd-breadcrumb"
+                    aria-label="Đường dẫn trang"
+                >
+                    <Link to="/">Trang chủ</Link>
+                    <span aria-hidden="true">/</span>
+                    <Link to="/sach">Cửa hàng</Link>
+                    <span aria-hidden="true">/</span>
+                    <span aria-current="page">{sach.tenSach}</span>
+                </nav>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col md:flex-row gap-10">
-                <div className="md:w-2/5 flex-shrink-0">
-                    <div className="bg-gray-100 rounded-lg overflow-hidden border border-gray-200 aspect-[3/4]">
-                        <img src={sach.hinhAnh ? `https://localhost:7010${sach.hinhAnh}` : "https://via.placeholder.com/600x800"} alt={sach.tenSach} className="w-full h-full object-cover" />
+                {/* Thông tin sản phẩm */}
+                <section
+                    className="bpd-product"
+                    aria-labelledby="book-title"
+                >
+                    <div className="bpd-media">
+                        <div className="bpd-media-frame">
+                            {imageUrl && !imageError ? (
+                                <img
+                                    src={imageUrl}
+                                    alt={sach.tenSach}
+                                    onError={() => setImageError(true)}
+                                />
+                            ) : (
+                                <div className="bpd-no-image">
+                                    <Icon name="book" />
+                                    <span>Chưa có ảnh bìa</span>
+                                </div>
+                            )}
+                        </div>
+
+                        
                     </div>
-                </div>
 
-                <div className="md:w-3/5 flex flex-col">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">{sach.tenSach}</h1>
-                    <p className="text-3xl font-bold text-red-600 mb-6">{displayPrice.toLocaleString('vi-VN')} đ</p>
+                    <div className="bpd-info">
+                        <div className="bpd-topline">
+                            <span className="bpd-eyebrow">
+                                TỦ SÁCH BOOKPARADISE
+                            </span>
 
-                    {/* KHU VỰC CHỌN BIẾN THỂ */}
-                    {sach.cacBienThe && sach.cacBienThe.length > 0 && (
-                        <div className="mb-6 border-t border-b py-4 border-gray-100">
-                            <h3 className="text-sm font-semibold text-gray-800 mb-3">Tùy chọn phiên bản:</h3>
-                            <div className="flex flex-wrap gap-3">
-                                {sach.cacBienThe.map(bt => (
-                                    <button 
-                                        key={bt.maBienThe}
-                                        onClick={() => { setSelectedVariant(bt); setQuantity(1); }}
-                                        className={`px-4 py-2 border rounded-lg text-sm font-medium transition ${
-                                            selectedVariant?.maBienThe === bt.maBienThe 
-                                            ? 'border-red-600 text-red-600 bg-red-50' 
-                                            : 'border-gray-300 text-gray-700 hover:border-red-400'
-                                        }`}
-                                    >
-                                        {bt.tenBienThe} {bt.giaCongThem > 0 && `(+${bt.giaCongThem.toLocaleString('vi-VN')}đ)`}
-                                    </button>
-                                ))}
+                            <span
+                                className={`bpd-stock${
+                                    isAvailable ? '' : ' is-empty'
+                                }`}
+                            >
+                                {isAvailable
+                                    ? `Còn hàng · ${currentStock} cuốn`
+                                    : 'Tạm hết hàng'}
+                            </span>
+                        </div>
+
+                        <h1 id="book-title">{sach.tenSach}</h1>
+
+                        <div className="bpd-price-box">
+                            <span>Giá bán</span>
+                            <strong>{money(displayPrice)}</strong>
+
+                            {selectedVariant && (
+                                <small>
+                                    {selectedVariant.tenBienThe}
+                                </small>
+                            )}
+                        </div>
+
+                        {/* Phiên bản sách */}
+                        {sach.cacBienThe?.length > 0 && (
+                            <div
+                                className="bpd-variants"
+                                role="group"
+                                aria-label="Chọn phiên bản"
+                            >
+                                <h2>Phiên bản</h2>
+
+                                <div className="bpd-variant-list">
+                                    {sach.cacBienThe.map((bt) => {
+                                        const selected =
+                                            selectedVariant?.maBienThe ===
+                                            bt.maBienThe;
+
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={bt.maBienThe}
+                                                className={`bpd-variant${
+                                                    selected
+                                                        ? ' is-selected'
+                                                        : ''
+                                                }`}
+                                                aria-pressed={selected}
+                                                onClick={() => {
+                                                    setSelectedVariant(bt);
+                                                    setQuantity(1);
+                                                }}
+                                            >
+                                                {bt.tenBienThe}
+
+                                                {Number(bt.giaCongThem) > 0 && (
+                                                    <small>
+                                                        +{money(bt.giaCongThem)}
+                                                    </small>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
+                        )}
+
+                        <div className="bpd-description">
+                            <h2>Về cuốn sách</h2>
+                            <p>
+                                {sach.moTa ||
+                                    'Nội dung giới thiệu đang được cập nhật.'}
+                            </p>
+                        </div>
+
+                        {/* Số lượng và thêm giỏ */}
+                        <div className="bpd-purchase">
+                            <div className="bpd-quantity-block">
+                                <span id="book-quantity-label">
+                                    Số lượng
+                                </span>
+
+                                <div
+                                    className="bpd-quantity"
+                                    role="group"
+                                    aria-labelledby="book-quantity-label"
+                                >
+                                    <button
+                                        type="button"
+                                        aria-label="Giảm số lượng"
+                                        disabled={!isAvailable || quantity <= 1}
+                                        onClick={() =>
+                                            setQuantity((value) =>
+                                                Math.max(1, value - 1)
+                                            )
+                                        }
+                                    >
+                                        −
+                                    </button>
+
+                                    <span aria-live="polite">
+                                        {isAvailable ? quantity : 0}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        aria-label="Tăng số lượng"
+                                        disabled={
+                                            !isAvailable ||
+                                            quantity >= currentStock
+                                        }
+                                        onClick={() =>
+                                            setQuantity((value) =>
+                                                Math.min(
+                                                    currentStock,
+                                                    value + 1
+                                                )
+                                            )
+                                        }
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="bpd-primary bpd-add-cart"
+                                disabled={!isAvailable}
+                                onClick={() => {
+                                    if (isAvailable) {
+                                        addToCart(
+                                            sach,
+                                            quantity,
+                                            selectedVariant
+                                        );
+                                    }
+                                }}
+                            >
+                                <Icon name="cart" />
+
+                                {isAvailable
+                                    ? 'Thêm vào giỏ hàng'
+                                    : 'Sản phẩm tạm hết hàng'}
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Đánh giá */}
+                <section
+                    className="bpd-reviews"
+                    aria-labelledby="reviews-title"
+                >
+                    <div className="bpd-review-heading">
+                        <div>
+                            <p>GÓC NHÌN TỪ BẠN ĐỌC</p>
+                            <h2 id="reviews-title">
+                                Chia sẻ về cuốn sách
+                            </h2>
+                        </div>
+
+                        {!commentsLoading && !commentsError && (
+                            <span className="bpd-review-count">
+                                {comments.length} đánh giá
+                            </span>
+                        )}
+                    </div>
+
+                    {user ? (
+                        <form
+                            className="bpd-review-form"
+                            onSubmit={handleSubmitComment}
+                            aria-busy={isSending}
+                        >
+                       
+
+                            <textarea
+                                id="book-comment"
+                                rows={4}
+                                required
+                                disabled={isSending}
+                                placeholder="Điều gì ở cuốn sách khiến bạn ấn tượng?"
+                                value={newComment}
+                                onChange={(e) => {
+                                    setNewComment(e.target.value);
+                                    setFeedback(null);
+                                }}
+                            />
+
+                            <div className="bpd-form-footer">
+                                <span>
+                                    Đánh giá sẽ hiển thị sau khi được duyệt.
+                                </span>
+
+                                <button
+                                    className="bpd-primary"
+                                    type="submit"
+                                    disabled={isSending}
+                                >
+                                    {isSending
+                                        ? 'Đang gửi...'
+                                        : 'Gửi đánh giá'}
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="bpd-login-note">
+                            <Icon name="chat" />
+                            <p>
+                                <Link to="/dang-nhap">Đăng nhập</Link>{' '}
+                                để chia sẻ cảm nhận của bạn về cuốn sách.
+                            </p>
                         </div>
                     )}
 
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Mô tả sản phẩm:</h3>
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-line bg-gray-50 p-4 rounded-lg border border-gray-100">{sach.moTa}</p>
-                    </div>
-
-                    <div className="mb-6 flex items-center gap-4">
-                        <span className="text-gray-700 font-medium">Tình trạng:</span>
-                        {isAvailable ? (
-                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">Còn hàng ({currentStock} cuốn)</span>
-                        ) : (
-                            <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">Hết hàng</span>
-                        )}
-                    </div>
-
-                    <div className="mt-auto">
-                        {isAvailable ? (
-                            <div className="flex flex-wrap gap-4 items-end">
-                                <div>
-                                    <p className="text-gray-700 font-medium mb-2">Số lượng:</p>
-                                    <div className="flex items-center border border-gray-300 rounded-md bg-white">
-                                        <button onClick={handleDecrease} className="px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-l-md transition text-lg leading-none">-</button>
-                                        <span className="px-4 py-2 font-medium border-x border-gray-300 min-w-[3.5rem] text-center">{quantity}</span>
-                                        <button onClick={handleIncrease} className="px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-r-md transition text-lg leading-none">+</button>
-                                    </div>
-                                </div>
-                                {/* Truyền selectedVariant vào hàm addToCart */}
-                                <button onClick={() => addToCart(sach, quantity, selectedVariant)} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md h-[50px]">
-                                    Thêm vào giỏ
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="p-4 bg-gray-100 text-gray-500 rounded-lg text-center font-medium border border-gray-200">Sản phẩm tạm hết hàng!</div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* KHU VỰC BÌNH LUẬN (Giữ nguyên) */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10 mt-8">
-                {/* ... (Code bình luận của bạn giữ nguyên, tôi thu gọn để dễ nhìn) ... */}
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Đánh giá sản phẩm</h2>
-                <div className="mb-8">
-                    {user ? (
-                        <form onSubmit={handleSubmitComment}>
-                            <textarea className="w-full border border-gray-300 rounded-lg p-4" rows="3" placeholder="Chia sẻ cảm nhận..." value={newComment} onChange={(e) => setNewComment(e.target.value)}></textarea>
-                            <div className="flex justify-end mt-2"><button type="submit" className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Gửi đánh giá</button></div>
-                        </form>
-                    ) : ( <p className="text-gray-600">Vui lòng <Link to="/login" className="text-blue-600">Đăng nhập</Link></p> )}
-                </div>
-                <div className="space-y-4">
-                    {comments.map((cmt, index) => (
-                        <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
-                            <div>
-                                <span className="font-bold text-gray-800">{cmt.tenNguoiDung}</span>
-                                <p className="text-gray-700">{cmt.noiDung}</p>
-                            </div>
+                    {feedback && (
+                        <div
+                            className={`bpd-feedback bpd-feedback--${feedback.type}`}
+                            role={
+                                feedback.type === 'error'
+                                    ? 'alert'
+                                    : 'status'
+                            }
+                        >
+                            {feedback.text}
                         </div>
-                    ))}
-                </div>
+                    )}
+
+                    <div className="bpd-comment-list">
+                        {commentsLoading ? (
+                            <p
+                                className="bpd-comment-note"
+                                role="status"
+                            >
+                                Đang tải đánh giá...
+                            </p>
+                        ) : commentsError ? (
+                            <p
+                                className="bpd-comment-note"
+                                role="alert"
+                            >
+                                {commentsError}
+                            </p>
+                        ) : comments.length === 0 ? (
+                            <div className="bpd-empty-comments">
+                                <Icon name="chat" />
+                                <p>
+                                    Chưa có đánh giá nào. Hãy chia sẻ
+                                    cảm nhận đầu tiên nhé!
+                                </p>
+                            </div>
+                        ) : (
+                            comments.map((cmt, index) => (
+                                <article
+                                    className="bpd-comment"
+                                    key={cmt.maBinhLuan ?? index}
+                                >
+                                    <span
+                                        className="bpd-comment-avatar"
+                                        aria-hidden="true"
+                                    >
+                                        {initial(cmt.tenNguoiDung)}
+                                    </span>
+
+                                    <div className="bpd-comment-body">
+                                        <h3>
+                                            {cmt.tenNguoiDung || 'Bạn đọc'}
+                                        </h3>
+                                        <p>{cmt.noiDung}</p>
+                                    </div>
+                                </article>
+                            ))
+                        )}
+                    </div>
+                </section>
             </div>
         </div>
     );
-};
-export default ProductDetail;
+}

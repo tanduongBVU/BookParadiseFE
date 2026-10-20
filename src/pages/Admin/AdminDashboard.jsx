@@ -1,57 +1,115 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { getAllUsers, deleteUser, updateUserRole } from '../../services/userService';
-import { getDanhSachSach } from '../../services/sachService'; 
+import { getAllUsers } from '../../services/userService';
+import { getDanhSachSach } from '../../services/sachService';
+import './AdminDashboard.css';
 
 // Import các component quản lý
 import CategoryManager from './components/CategoryManager';
 import PromotionManager from './components/PromotionManager';
 import ProductManager from './components/ProductManager';
-import ContactManager from './components/ContactManager'; 
-import CommentManager from './components/CommentManager'; 
-import VoucherManager from './components/VoucherManager'; // Đã import VoucherManager
+import ContactManager from './components/ContactManager';
+import CommentManager from './components/CommentManager';
+import VoucherManager from './components/VoucherManager';
 import OrderManager from './components/OrderManager';
+import UserManager from './components/UserManager';
 import DashboardOverview from './components/DashboardOverview';
+
+/* ---------------------------------------------------------
+   Icon set — small inline SVGs, no extra dependency needed.
+--------------------------------------------------------- */
+const iconProps = {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.75,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+};
+
+const IconMark = (p) => (
+    <svg {...iconProps} {...p}><path d="M6 4h12v16l-6-4-6 4V4Z" /></svg>
+);
+const IconGrid = (p) => (
+    <svg {...iconProps} {...p}><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>
+);
+const IconBook = (p) => (
+    <svg {...iconProps} {...p}><path d="M4 5.5C4 4.67 4.67 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z" /><path d="M20 5.5c0-.83-.67-1.5-1.5-1.5H12v16h6.5c.83 0 1.5-.67 1.5-1.5v-13Z" /></svg>
+);
+const IconBox = (p) => (
+    <svg {...iconProps} {...p}><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5v-9Z" /><path d="M3.8 7.3 12 12l8.2-4.7" /><path d="M12 12v9" /></svg>
+);
+const IconGift = (p) => (
+    <svg {...iconProps} {...p}><rect x="3.5" y="9" width="17" height="4" rx="0.5" /><path d="M5 13h14v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7Z" /><path d="M12 9V21" /><path d="M12 9C10.5 6.5 8.5 5.5 7.3 6.4c-1.2.9-.4 2.6 1.2 2.6H12Z" /><path d="M12 9c1.5-2.5 3.5-3.5 4.7-2.6 1.2.9.4 2.6-1.2 2.6H12Z" /></svg>
+);
+const IconTicket = (p) => (
+    <svg {...iconProps} {...p}><path d="M3 9.5a2 2 0 0 1 0-4h18a2 2 0 0 1 0 4 2 2 0 0 0 0 5 2 2 0 0 1 0 4H3a2 2 0 0 1 0-4 2 2 0 0 0 0-5Z" /><path d="M10 5.5v13" strokeDasharray="2 2" /></svg>
+);
+const IconCart = (p) => (
+    <svg {...iconProps} {...p}><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.3a2 2 0 0 0 2-1.6L20 8H6" /><circle cx="9.5" cy="20" r="1.3" /><circle cx="17" cy="20" r="1.3" /></svg>
+);
+const IconUsers = (p) => (
+    <svg {...iconProps} {...p}><circle cx="9" cy="8.5" r="3" /><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" /><path d="M16 8.2a2.7 2.7 0 1 1 0 5.4" /><path d="M15 14.3c2.6.2 4.6 2.1 4.6 4.7" /></svg>
+);
+const IconMail = (p) => (
+    <svg {...iconProps} {...p}><rect x="3.5" y="5.5" width="17" height="13" rx="2" /><path d="M4.5 7 12 12.5 19.5 7" /></svg>
+);
+const IconChat = (p) => (
+    <svg {...iconProps} {...p}><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H10l-4.5 3.5V16h-.5A2.5 2.5 0 0 1 2.5 13.5" transform="translate(1)" /></svg>
+);
+const IconLogout = (p) => (
+    <svg {...iconProps} {...p}><path d="M9 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H9" /><path d="M15 16l4-4-4-4" /><path d="M19 12H9" /></svg>
+);
+const IconHome = (p) => (
+    <svg {...iconProps} {...p}><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v8.5a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V10" /></svg>
+);
+
+const NAV_GROUPS = [
+    {
+        label: 'Vận hành',
+        items: [
+            { id: 'dashboard', label: 'Tổng Quan', icon: IconGrid },
+            { id: 'category', label: 'Loại Sách', icon: IconBook },
+            { id: 'product', label: 'Sản Phẩm', icon: IconBox },
+            { id: 'promotion', label: 'Khuyến Mãi', icon: IconGift },
+            { id: 'voucher', label: 'Mã Giảm Giá', icon: IconTicket },
+            { id: 'order', label: 'Đơn Hàng', icon: IconCart },
+        ],
+    },
+    {
+        label: 'Cộng đồng',
+        items: [
+            { id: 'users', label: 'Người Dùng', icon: IconUsers },
+            { id: 'contact', label: 'Liên Hệ', icon: IconMail },
+            { id: 'comment', label: 'Đánh Giá', icon: IconChat },
+        ],
+    },
+];
 
 const AdminDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
-    
+
     const [activeTab, setActiveTab] = useState('dashboard');
-    const [usersList, setUsersList] = useState([]);
-    const [loading, setLoading] = useState(true);
 
     const [stats, setStats] = useState({
         doanhThu: 0,
         donHangMoi: 0,
         sachTrongKho: 0,
-        nguoiDung: 0
+        nguoiDung: 0,
     });
-
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const data = await getAllUsers();
-            const sortedData = data.sort((a, b) => a.maNguoiDung - b.maNguoiDung);
-            setUsersList(sortedData);
-        } catch (error) {
-            console.error("Lỗi lấy danh sách user:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const fetchDashboardStats = async () => {
         try {
             const users = await getAllUsers();
             const sach = await getDanhSachSach();
-            
+
             setStats({
-                doanhThu: 0, 
+                doanhThu: 0,
                 donHangMoi: 0,
                 sachTrongKho: sach.length,
-                nguoiDung: users.length
+                nguoiDung: users.length,
             });
         } catch (error) {
             console.error("Lỗi lấy dữ liệu tổng quan:", error);
@@ -59,203 +117,86 @@ const AdminDashboard = () => {
     };
 
     useEffect(() => {
-        if (user && user.role === 'Admin') {
-            if (activeTab === 'users') {
-                fetchUsers();
-            } else if (activeTab === 'dashboard') {
-                fetchDashboardStats();
-            }
+        if (user && user.role === 'Admin' && activeTab === 'dashboard') {
+            fetchDashboardStats();
         }
     }, [user, activeTab]);
 
-    const handleDelete = async (id, ten) => {
-        if (window.confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản "${ten}" không?`)) {
-            try {
-                await deleteUser(id);
-                alert("Đã xóa thành công!");
-                fetchUsers();
-            } catch (error) {
-                alert("Lỗi khi xóa tài khoản.");
-            }
-        }
-    };
-
-    const handleRoleChange = async (id, currentRole, newRole) => {
-        if (currentRole === newRole) return;
-        if (window.confirm(`Xác nhận đổi quyền thành ${newRole}?`)) {
-            try {
-                await updateUserRole(id, newRole);
-                alert("Đã cập nhật phân quyền!");
-                fetchUsers();
-            } catch (error) {
-                alert("Lỗi khi cập nhật quyền.");
-            }
-        }
-    };
-
     if (!user || user.role !== 'Admin') {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-                <h1 className="text-3xl font-bold text-red-600 mb-4">Truy cập bị từ chối</h1>
-                <Link to="/" className="px-6 py-2 bg-blue-600 text-white rounded-lg">Về trang chủ</Link>
+            <div className="denied-screen">
+                <h1 className="denied-screen__title">Truy cập bị từ chối</h1>
+                <Link to="/" className="denied-screen__link">Về trang chủ</Link>
             </div>
         );
     }
 
-    const renderDashboard = () => <DashboardOverview />;
-
-    const renderUsers = () => (
-        <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Quản lý Người Dùng</h1>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                {loading ? (
-                    <div className="p-10 text-center text-gray-500 font-medium">Đang tải dữ liệu...</div>
-                ) : (
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 text-sm">
-                                <th className="p-4 font-semibold">ID</th>
-                                <th className="p-4 font-semibold">Họ Tên</th>
-                                <th className="p-4 font-semibold">Email</th>
-                                <th className="p-4 font-semibold text-center">Phân Quyền</th>
-                                <th className="p-4 font-semibold text-center">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {usersList.map((item) => (
-                                <tr key={item.maNguoiDung} className="hover:bg-gray-50 transition">
-                                    <td className="p-4 text-gray-800 font-medium">{item.maNguoiDung}</td>
-                                    <td className="p-4 text-gray-800">{item.hoTen || "Chưa cập nhật"}</td>
-                                    <td className="p-4 text-gray-500">{item.email}</td>
-                                    <td className="p-4 text-center">
-                                        <select 
-                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border outline-none cursor-pointer ${
-                                                item.vaiTro === 'Admin' ? 'bg-red-50 text-red-700 border-red-200' : 
-                                                item.vaiTro === 'Nhan_Vien' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                                                'bg-gray-50 text-gray-700 border-gray-200'
-                                            }`}
-                                            value={item.vaiTro || 'Khach_Hang'}
-                                            onChange={(e) => handleRoleChange(item.maNguoiDung, item.vaiTro, e.target.value)}
-                                        >
-                                            <option value="Admin">Admin</option>
-                                            <option value="Nhan_Vien">Nhân viên</option>
-                                            <option value="Khach_Hang">Khách hàng</option>
-                                        </select>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        {user.id !== item.maNguoiDung && (
-                                            <button 
-                                                onClick={() => handleDelete(item.maNguoiDung, item.hoTen || item.email)}
-                                                className="px-3 py-1.5 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white rounded text-sm font-medium transition"
-                                            >
-                                                Xóa
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-        </div>
-    );
-
     const renderContent = () => {
         switch (activeTab) {
-            case 'dashboard': return renderDashboard();
+            case 'dashboard': return <DashboardOverview />;
             case 'category': return <CategoryManager />;
             case 'promotion': return <PromotionManager />;
             case 'product': return <ProductManager />;
-            case 'users': return renderUsers();
-            case 'contact': return <ContactManager />; 
-            case 'comment': return <CommentManager />; 
-            case 'voucher': return <VoucherManager />; // Đã thêm render cho VoucherManager
+            case 'users': return <UserManager />;
+            case 'contact': return <ContactManager />;
+            case 'comment': return <CommentManager />;
+            case 'voucher': return <VoucherManager />;
             case 'order': return <OrderManager />;
-            default: return renderDashboard();
+            default: return <DashboardOverview />;
         }
     };
 
     return (
-        <div className="min-h-screen flex bg-gray-100">
-            <aside className="w-64 bg-slate-800 text-white flex flex-col shadow-xl flex-shrink-0">
-                <div className="p-6 border-b border-slate-700">
-                    <h2 className="text-2xl font-bold text-blue-400">Admin Panel</h2>
+        <div className="admin-layout">
+            <aside className="admin-sidebar">
+                <div className="admin-sidebar__brand">
+                    <div className="admin-sidebar__mark">
+                        <IconMark style={{ width: 20, height: 20 }} />
+                    </div>
+                    <div>
+                        <h2 className="admin-sidebar__title">Admin Panel</h2>
+                        <p className="admin-sidebar__subtitle">Quản trị nhà sách</p>
+                    </div>
                 </div>
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    <button 
-                        onClick={() => setActiveTab('dashboard')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        📊 Tổng Quan
-                    </button>
-                    
-                    <button 
-                        onClick={() => setActiveTab('category')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'category' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        📚 Loại Sách
-                    </button>
 
-                    <button 
-                        onClick={() => setActiveTab('promotion')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'promotion' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        🎁 Khuyến Mãi
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('product')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'product' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        📦 Sản Phẩm
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('order')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'order' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        🛒 Quản lý Đơn hàng
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('users')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'users' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        👥 Người Dùng
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('contact')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'contact' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        ✉️ Quản lý Liên Hệ
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('comment')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'comment' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        💬 Quản lý Đánh giá
-                    </button>
-
-                    {/* Menu Quản lý Mã giảm giá mới */}
-                    <button 
-                        onClick={() => setActiveTab('voucher')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'voucher' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        🎟️ Quản lý Mã giảm giá
-                    </button>
+                <nav className="admin-sidebar__nav">
+                    {NAV_GROUPS.map((group) => (
+                        <div className="admin-nav-group" key={group.label}>
+                            <div className="admin-nav-group__label">{group.label}</div>
+                            {group.items.map(({ id, label, icon: Icon }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setActiveTab(id)}
+                                    className={`admin-nav-item ${activeTab === id ? 'is-active' : ''}`}
+                                >
+                                    <Icon />
+                                    <span>{label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    ))}
                 </nav>
-                <div className="p-4 border-t border-slate-700 text-center">
-                    <span className="block font-medium mb-4 text-sm truncate px-2">{user.email}</span>
-                    <button onClick={() => { logout(); navigate('/'); }} className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition">Thoát</button>
+
+                <div className="admin-sidebar__footer">
+                    <div className="admin-sidebar__account">
+                        <div className="admin-sidebar__avatar">
+                            {user.email?.[0]?.toUpperCase() || 'A'}
+                        </div>
+                        <span className="admin-sidebar__email">{user.email}</span>
+                    </div>
+                    <button onClick={() => { logout(); navigate('/'); }} className="admin-sidebar__logout">
+                        <IconLogout />
+                        Đăng xuất
+                    </button>
+
+                    <Link to="/" className="admin-sidebar__home">
+                        <IconHome />
+                        Về trang chủ
+                    </Link>
                 </div>
             </aside>
 
-            <main className="flex-1 p-8 overflow-auto">
+            <main className="admin-main">
                 {renderContent()}
             </main>
         </div>

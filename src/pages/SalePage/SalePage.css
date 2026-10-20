@@ -1,0 +1,253 @@
+/* Container & Layout */
+.sale-page-container {
+  background-color: #f8fafc;
+  min-height: 100vh;
+  padding: 2.5rem 1rem;
+}
+
+.sale-page-content {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Header Section */
+.sale-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  max-width: 672px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sale-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background-color: #fff1f2;
+  color: #e11d48;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.sale-badge-icon {
+  margin-right: 0.375rem;
+}
+
+.sale-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.sale-subtitle {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.brand-highlight {
+  font-weight: 600;
+  color: #e11d48;
+}
+
+/* Loading & Empty State */
+.loading-box {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 4px solid #e11d48;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  text-align: center;
+  background-color: #ffffff;
+  padding: 3rem;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  max-width: 448px;
+  margin: 0 auto;
+}
+
+/* Book Grid */
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .book-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .book-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .book-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Book Card */
+.book-card {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Book Image Container */
+.book-image-wrapper {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background-color: #f8fafc;
+  overflow: hidden;
+}
+
+.discount-tag {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  background-color: #e11d48;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  z-index: 10;
+}
+
+.book-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.75rem;
+  transition: transform 0.5s ease;
+}
+
+.book-card:hover .book-image {
+  transform: scale(1.05);
+}
+
+/* Book Info */
+.book-info {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.book-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+
+  /* Giới hạn 2 dòng */
+  display: -webkit-box;
+  
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.2s ease;
+}
+
+.book-title:hover {
+  color: #e11d48;
+}
+
+.price-section {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.sale-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e11d48;
+  display: block;
+}
+
+.original-price {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+  margin-top: 0.125rem;
+  display: block;
+}
+
+/* Card Button */
+.book-action {
+  padding: 0 1rem 1rem 1rem;
+}
+
+.btn-detail {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background-color: #f1f5f9;
+  color: #334155;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.625rem 0;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.book-card:hover .btn-detail {
+  background-color: #e11d48;
+  color: #ffffff;
+}
+
+.btn-primary {
+  display: inline-block;
+  background-color: #2a0f0f;
+  color: #ffffff;
+  font-weight: 500;
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #901515;
+}
