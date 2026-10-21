@@ -15,6 +15,7 @@ import VoucherManager from './components/VoucherManager';
 import OrderManager from './components/OrderManager';
 import UserManager from './components/UserManager';
 import DashboardOverview from './components/DashboardOverview';
+import SecurityMonitor from './components/SecurityMonitor';
 
 /* ---------------------------------------------------------
    Icon set — small inline SVGs, no extra dependency needed.
@@ -64,6 +65,12 @@ const IconLogout = (p) => (
 const IconHome = (p) => (
     <svg {...iconProps} {...p}><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v8.5a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V10" /></svg>
 );
+const IconShield = (p) => (
+    <svg {...iconProps} {...p}>
+        <path d="M12 3 20 6v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-3Z" />
+        <path d="m9 12 2 2 4-4" />
+    </svg>
+);
 
 const NAV_GROUPS = [
     {
@@ -84,6 +91,12 @@ const NAV_GROUPS = [
             { id: 'contact', label: 'Liên Hệ', icon: IconMail },
             { id: 'comment', label: 'Đánh Giá', icon: IconChat },
         ],
+    },
+    {
+    label: 'Bảo mật',
+    items: [
+        { id: 'security', label: 'Giám Sát Bảo Mật và Tối ưu', icon: IconShield },
+    ],
     },
 ];
 
@@ -142,6 +155,7 @@ const AdminDashboard = () => {
             case 'comment': return <CommentManager />;
             case 'voucher': return <VoucherManager />;
             case 'order': return <OrderManager />;
+            case 'security': return <SecurityMonitor />;
             default: return <DashboardOverview />;
         }
     };
