@@ -71,6 +71,10 @@ export default function Header() {
     const [accountOpen, setAccountOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
 
+    // Kiểm tra quyền truy cập Admin (Admin hoặc Nhan_Vien)
+    const userRole = user?.role || user?.vaiTro || user?.vai_tro;
+    const hasAdminAccess = userRole === 'Admin' || userRole === 'Nhan_Vien';
+
     const totalItems = cart.reduce(
         (sum, item) => sum + Number(item.soMua || 0),
         0
@@ -260,7 +264,8 @@ export default function Header() {
                                                 )}
                                         </div>
 
-                                        {user.role === 'Admin' && (
+                                        {/* NÚT TRANG QUẢN TRỊ - ĐÃ PHÂN QUYỀN */}
+                                        {hasAdminAccess && (
                                             <Link
                                                 to="/admin"
                                                 className="bph-panel-item"
