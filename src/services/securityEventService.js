@@ -1,4 +1,3 @@
-
 import api from './api';
 
 export const getSecurityEvents = async () => {
@@ -7,8 +6,9 @@ export const getSecurityEvents = async () => {
 };
 
 export const updateSecurityEventReview = async (id, reviewStatus) => {
+    // Đã sửa '/security-events/' thành '/SecurityEvents/' để khớp với Backend
     const response = await api.put(
-        `/security-events/${id}/review`,
+        `/SecurityEvents/${id}/review`,
         { reviewStatus }
     );
 
