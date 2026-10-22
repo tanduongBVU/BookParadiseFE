@@ -585,6 +585,7 @@ const ProductManager = () => {
                                         <th className="pd-col-price">Giá gốc</th>
                                         <th className="pd-col-stock">Tồn kho</th>
                                         <th className="pd-col-sale">Trang Sale</th>
+                                        <th>Trạng thái hiển thị</th>
                                         <th className="pd-col-actions">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -631,6 +632,31 @@ const ProductManager = () => {
                                                         <span className="pd-switch-track" />
                                                         {p.hienThiTrangSale ? 'Đang bật' : 'Tắt'}
                                                     </button>
+                                                </td>
+                                                <td>
+                                                    {p.trangThaiAI === 'Cho_Kiem_Duyet' ? (
+                                                        <span className="pd-stock-pill"
+                                                            style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                                                            Đang xử lý
+                                                        </span>
+                                                    ) : p.trangThaiAI === 'Hop_Le' && p.hienThi ? (
+                                                        <span className="pd-stock-pill"
+                                                            style={{ backgroundColor: '#dcfce7', color: '#166534' }}>
+                                                            Đang hiển thị
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            <span className="pd-stock-pill"
+                                                                style={{ backgroundColor: '#fee2e2', color: '#991b1b' }}>
+                                                                Đã ẩn
+                                                            </span>
+                                                            {p.trangThaiAI && (
+                                                                <div style={{ fontSize: '12px', marginTop: '5px', color: '#b91c1c' }}>
+                                                                    Lý do: {p.trangThaiAI}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </td>
                                                 <td>
                                                     <div className="pd-row-actions">
