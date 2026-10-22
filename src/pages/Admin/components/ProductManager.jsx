@@ -436,11 +436,37 @@ const ProductManager = () => {
         setIsProductModalOpen(false);
     };
 
+    
     const handleDeleteProduct = async (id) => {
-        if (!window.confirm('Bạn muốn xóa sách này?')) return;
-        await fetch(`${API_SACH}/${id}`, { method: 'DELETE' });
-        fetchData();
+        if (!window.confirm('Bạn muốn xóa sách này?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_SACH}/${id}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                window.alert(
+                    data.message || 'Không thể xóa sách này.'
+                );
+                return;
+            }
+
+            window.alert(
+                data.message || 'Thao tác thành công!'
+            );
+
+            await fetchData();
+        } catch (error) {
+            console.error('Lỗi khi xóa sách:', error);
+            window.alert('Không thể kết nối đến máy chủ.');
+        }
     };
+
 
     const toggleSale = async (id) => {
         await fetch(`${API_SACH}/${id}/toggle-sale`, { method: 'PATCH' });
