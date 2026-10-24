@@ -127,6 +127,74 @@
     background: #fff0f2;
 }
 
+/* ===== THANH TÌM KIẾM ===== */
+.bph-search-form {
+    display: flex;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    max-width: 260px;
+    margin-left: auto;
+    margin-right: 15px;
+}
+
+.bph-search-form.is-mobile {
+    display: none;
+    max-width: 100%;
+    margin: 0 14px 15px 14px;
+}
+
+.bph-search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 40px 0 18px;
+    border: 1px solid #eee5e7;
+    border-radius: 20px;
+    background: #fdfafb;
+    color: #352c2e;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.bph-search-input:focus {
+    border-color: #b52e3b;
+    background: #fff;
+    box-shadow: 0 0 0 3px #b52e3b15;
+}
+
+.bph-search-input::placeholder {
+    color: #9c8c92;
+}
+
+.bph-search-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: #8a7d82;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+}
+
+.bph-search-btn:hover {
+    color: #b52e3b;
+    background: #fff0f2;
+}
+
+.bph-search-btn svg {
+    width: 17px;
+    height: 17px;
+}
+/* ======================== */
+
 /* Các nút bên phải */
 .bph-tools {
     display: flex;
@@ -408,6 +476,17 @@
     .bph-mobile-nav .bph-nav-link {
         padding: 12px 14px;
         font-size: 14px;
+    }
+}
+
+/* Ẩn bớt thanh tìm kiếm trên giao diện nhỏ gọn và đưa vào Menu dọc */
+@media (max-width: 850px) {
+    .bph-search-form.is-desktop {
+        display: none;
+    }
+    
+    .bph-search-form.is-mobile {
+        display: flex;
     }
 }
 

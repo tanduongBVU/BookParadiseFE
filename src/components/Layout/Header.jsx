@@ -39,6 +39,7 @@ function Icon({ name }) {
         close: 'm6 6 12 12M18 6 6 18',
         admin: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
         logout: 'M9 4H4v16h5M14 8l4 4-4 4M8 12h13',
+        search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm10 2-4.35-4.35', // Icon kính lúp
     };
 
     return (
@@ -70,6 +71,7 @@ export default function Header() {
 
     const [accountOpen, setAccountOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [searchKeyword, setSearchKeyword] = useState(''); // State lưu từ khóa tìm kiếm
 
     // Kiểm tra quyền truy cập Admin (Admin hoặc Nhan_Vien)
     const userRole = user?.role || user?.vaiTro || user?.vai_tro;
@@ -96,6 +98,16 @@ export default function Header() {
     const closeMenus = () => {
         setAccountOpen(false);
         setMobileOpen(false);
+    };
+
+    // Hàm xử lý khi submit tìm kiếm
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchKeyword.trim()) {
+            // Chuyển hướng sang trang cửa hàng (/sach) kèm theo URL parameter keyword
+            navigate(`/sach?keyword=${encodeURIComponent(searchKeyword.trim())}`);
+            closeMenus();
+        }
     };
 
     // Đóng menu khi chuyển trang
@@ -187,6 +199,20 @@ export default function Header() {
                 >
                     {menuLinks}
                 </nav>
+
+                {/* Thanh tìm kiếm trên máy tính */}
+                <form className="bph-search-form is-desktop" onSubmit={handleSearch}>
+                    <input
+                        type="text"
+                        className="bph-search-input"
+                        placeholder="Tìm kiếm sách..."
+                        value={searchKeyword}
+                        onChange={(e) => setSearchKeyword(e.target.value)}
+                    />
+                    <button type="submit" className="bph-search-btn" aria-label="Tìm kiếm">
+                        <Icon name="search" />
+                    </button>
+                </form>
 
                 <div className="bph-tools">
                     {/* Yêu thích */}
@@ -320,12 +346,27 @@ export default function Header() {
                 </div>
             </div>
 
+            {/* Menu Dropdown Điện Thoại */}
             {mobileOpen && (
                 <nav
                     id={mobileId}
                     className="bph-mobile-nav"
                     aria-label="Menu điện thoại"
                 >
+                    {/* Thanh tìm kiếm hiển thị trong menu trên điện thoại */}
+                    <form className="bph-search-form is-mobile" onSubmit={handleSearch}>
+                        <input
+                            type="text"
+                            className="bph-search-input"
+                            placeholder="Tìm kiếm sách..."
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                        />
+                        <button type="submit" className="bph-search-btn" aria-label="Tìm kiếm">
+                            <Icon name="search" />
+                        </button>
+                    </form>
+
                     {menuLinks}
                 </nav>
             )}

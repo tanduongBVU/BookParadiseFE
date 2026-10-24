@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom'; // Thêm useSearchParams
 import { getDanhSachSach } from '../../services/sachService';
 import { WishlistContext } from '../../context/WishlistContext';
 import { CartContext } from '../../context/CartContext';
@@ -8,6 +8,7 @@ const Shop = () => {
 
     const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
     const { addToCart } = useContext(CartContext); 
+    const [searchParams, setSearchParams] = useSearchParams(); // Khởi tạo hook đọc URL
 
     const [danhSachGoc, setDanhSachGoc] = useState([]);
     const [danhSachHienThi, setDanhSachHienThi] = useState([]);
@@ -15,8 +16,17 @@ const Shop = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [searchTerm, setSearchTerm] = useState('');
+    // Lấy keyword từ URL (nếu có) để làm giá trị mặc định cho ô tìm kiếm
+    const initialKeyword = searchParams.get('keyword') || '';
+    const [searchTerm, setSearchTerm] = useState(initialKeyword);
+    
     const [priceRange, setPriceRange] = useState('all');
+
+    // Cập nhật lại searchTerm nếu URL thay đổi (Ví dụ: người dùng gõ tìm kiếm mới từ Header)
+    useEffect(() => {
+        const keywordFromUrl = searchParams.get('keyword') || '';
+        setSearchTerm(keywordFromUrl);
+    }, [searchParams]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -54,9 +64,23 @@ const Shop = () => {
         setDanhSachHienThi(ketQuaLoc);
     }, [searchTerm, priceRange, danhSachGoc]);
 
+    // Hàm xử lý gõ tìm kiếm trực tiếp trong ô input của trang Shop
+    const handleSearchInput = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        
+        // Cập nhật URL (để copy link gửi người khác vẫn giữ được kết quả tìm kiếm)
+        if (value) {
+            setSearchParams({ keyword: value });
+        } else {
+            setSearchParams({});
+        }
+    };
+
     const handleResetFilter = () => {
         setSearchTerm('');
         setPriceRange('all');
+        setSearchParams({}); // Xóa keyword trên URL
     };
 
     if (loading) return <div className="flex justify-center items-center min-h-[50vh] text-lg font-medium text-gray-600">Đang tải dữ liệu sách...</div>;
@@ -87,7 +111,7 @@ const Shop = () => {
                                 placeholder="Nhập tên sách..."
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={handleSearchInput}
                             />
                         </div>
 
@@ -146,7 +170,7 @@ const Shop = () => {
                 {/* ============ CỘT PHẢI: LƯỚI SẢN PHẨM ============ */}
                 <div className="w-full md:w-3/4 lg:w-4/5">
                     <div className="mb-4 text-gray-600 font-medium">
-                        Hiển thị {danhSachHienThi.length} kết quả
+                        Hiển thị {danhSachHienThi.length} kết quả {searchTerm && <span className="text-red-500 italic">cho "{searchTerm}"</span>}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -182,7 +206,6 @@ const Shop = () => {
                                     {/* =========== NỘI DUNG SÁCH =========== */}
                                     <Link to={`/sach/${sach.maSach}`} className="flex flex-col h-full">
                                         <div className="relative pt-[130%] bg-gray-50 overflow-hidden">
-                                            {/* ĐÃ CHÈN DOMAIN BACKEND VÀO ĐÂY */}
                                             <img 
                                                 src={sach.hinhAnh ? `https://localhost:7010${sach.hinhAnh}` : "https://via.placeholder.com/300x400?text=Sách"} 
                                                 alt={sach.tenSach} 
