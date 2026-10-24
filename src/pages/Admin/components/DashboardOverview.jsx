@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Đã import thư viện Link
+import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560'];
@@ -7,22 +7,45 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560'
 const DashboardOverview = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const fetchDashboardData = async () => {
+        try {
+            const res = await fetch('https://localhost:7010/api/dashboard/summary');
+            if (res.ok) {
+                setData(await res.json());
+            }
+        } catch (error) {
+            console.error("Lỗi tải dữ liệu Dashboard:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const res = await fetch('https://localhost:7010/api/dashboard/summary');
-                if (res.ok) {
-                    setData(await res.json());
-                }
-            } catch (error) {
-                console.error("Lỗi tải dữ liệu Dashboard:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchDashboardData();
     }, []);
+
+    // HÀM XỬ LÝ LÀM MỚI DỮ LIỆU BÁO CÁO
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            const res = await fetch('https://localhost:7010/api/dashboard/refresh', {
+                method: 'POST'
+            });
+            if (res.ok) {
+                // Tải lại dữ liệu tổng quan sau khi DB tính toán xong
+                await fetchDashboardData();
+            } else {
+                alert("Có lỗi xảy ra khi làm mới dữ liệu ở máy chủ.");
+            }
+        } catch (error) {
+            console.error("Lỗi refresh:", error);
+            alert("Không thể kết nối đến máy chủ.");
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     if (loading) return <div className="p-10 text-center font-bold text-gray-500">Đang tải thống kê...</div>;
     if (!data) return <div className="p-10 text-center text-red-500">Lỗi kết nối máy chủ!</div>;
@@ -30,12 +53,51 @@ const DashboardOverview = () => {
     return (
         <div className="space-y-6">
             
-            {/* Header đã khôi phục nút Về Cửa hàng */}
+            {/* Header */}
             <div className="flex justify-between items-center border-b pb-4 mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Tổng Quan Kinh Doanh</h1>
                 <Link to="/" className="text-blue-600 font-bold hover:underline transition">
                     Về Cửa hàng &rarr;
                 </Link>
+            </div>
+
+            {/* KHU VỰC THÔNG BÁO TỐI ƯU MATERIALIZED VIEW */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6">
+                <div className="flex items-center gap-2 mb-3 md:mb-0">
+                    <span className="text-blue-500">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </span>
+                    <p className="text-sm text-gray-700">
+                        Dữ liệu báo cáo được cập nhật lần cuối lúc: 
+                        <span className="font-bold ml-1">
+                            {data.lanCapNhatCuoi ? new Date(data.lanCapNhatCuoi).toLocaleString('vi-VN') : 'Đang xử lý'}
+                        </span>
+                    </p>
+                </div>
+                <button 
+                    onClick={handleRefresh} 
+                    disabled={isRefreshing}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-bold text-white rounded shadow transition ${isRefreshing ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                    {isRefreshing ? (
+                        <>
+                            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Đang ép DB tính toán...
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Cập nhật báo cáo ngay
+                        </>
+                    )}
+                </button>
             </div>
 
             {/* 1. KHỐI DOANH THU */}
