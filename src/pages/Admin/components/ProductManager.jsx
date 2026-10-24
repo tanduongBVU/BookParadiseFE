@@ -84,6 +84,21 @@ const ProductManager = () => {
     const [loaded, setLoaded] = useState(false);
     useEffect(() => { fetchData().finally(() => setLoaded(true)); }, []);
 
+    useEffect(() => {
+        // Kiểm tra xem có sách nào đang ở trạng thái chờ AI duyệt không
+        const hasProcessingItems = products.some(p => p.trangThaiAI === 'Cho_Kiem_Duyet');
+
+        if (hasProcessingItems) {
+            // Nếu có, tự động gọi API tải lại bảng mỗi 2 giây
+            const intervalId = setInterval(() => {
+                fetchData();
+            }, 2000);
+
+            // Dọn dẹp interval khi hoàn thành để không bị tràn bộ nhớ
+            return () => clearInterval(intervalId);
+        }
+    }, [products]);
+
     // HÀM XỬ LÝ UPLOAD ẢNH
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
@@ -162,14 +177,23 @@ const ProductManager = () => {
     };
 
     const toggleVisibility = async (id) => {
-        try {
-            await fetch(`${API_SACH}/${id}/toggle-visibility`, { method: 'PATCH' });
-            fetchData();
-        } catch (error) {
-            console.error('Lỗi khi cập nhật trạng thái hiển thị:', error);
-            window.alert('Không thể kết nối đến máy chủ.');
+    try {
+        const res = await fetch(`${API_SACH}/${id}/toggle-visibility`, { method: 'PATCH' });
+        
+        // Nếu Backend chặn lại (mã lỗi 400 BadRequest)
+        if (!res.ok) {
+            const errorData = await res.json();
+            window.alert(errorData.message || "Lỗi không thể mở hiển thị.");
+            return; // Dừng lại, không fetch lại data
         }
-    };
+
+        // Nếu thành công thì tải lại bảng
+        fetchData();
+    } catch (error) {
+        console.error('Lỗi khi cập nhật trạng thái hiển thị:', error);
+        window.alert('Không thể kết nối đến máy chủ.');
+    }
+};
 
     const openProductForm = (prod = null) => {
         if (prod) {
