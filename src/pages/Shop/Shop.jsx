@@ -1,14 +1,13 @@
 import { useState, useEffect, useContext } from 'react';
-import { Link, useSearchParams } from 'react-router-dom'; // Thêm useSearchParams
+import { Link, useSearchParams } from 'react-router-dom';
 import { getDanhSachSach } from '../../services/sachService';
 import { WishlistContext } from '../../context/WishlistContext';
 import { CartContext } from '../../context/CartContext';
 
 const Shop = () => {
-
     const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
     const { addToCart } = useContext(CartContext); 
-    const [searchParams, setSearchParams] = useSearchParams(); // Khởi tạo hook đọc URL
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [danhSachGoc, setDanhSachGoc] = useState([]);
     const [danhSachHienThi, setDanhSachHienThi] = useState([]);
@@ -16,42 +15,54 @@ const Shop = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Lấy keyword từ URL (nếu có) để làm giá trị mặc định cho ô tìm kiếm
     const initialKeyword = searchParams.get('keyword') || '';
     const [searchTerm, setSearchTerm] = useState(initialKeyword);
-    
     const [priceRange, setPriceRange] = useState('all');
 
-    // Cập nhật lại searchTerm nếu URL thay đổi (Ví dụ: người dùng gõ tìm kiếm mới từ Header)
+    // Đồng bộ searchTerm khi URL thay đổi (nhập từ Header)
     useEffect(() => {
         const keywordFromUrl = searchParams.get('keyword') || '';
         setSearchTerm(keywordFromUrl);
     }, [searchParams]);
 
+    // GỌI API BACKEND ĐỂ TÌM KIẾM (KÍCH HOẠT MÔ PHỎNG SLOW_SEARCH)
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const data = await getDanhSachSach();
-                setDanhSachGoc(data);
-                setDanhSachHienThi(data);
+                if (searchTerm.trim() !== '') {
+                    // Nếu có từ khóa -> Gọi API Search của C# để C# xử lý và ép trễ
+                    const res = await fetch(`https://localhost:7010/api/Sach/search?keyword=${encodeURIComponent(searchTerm)}`);
+                    if (res.ok) {
+                        const result = await res.json();
+                        // API Search trả về object có thuộc tính 'data'
+                        setDanhSachGoc(result.data || []);
+                    } else {
+                        setDanhSachGoc([]);
+                    }
+                } else {
+                    // Nếu không có từ khóa -> Lấy tất cả sách bình thường
+                    const data = await getDanhSachSach();
+                    setDanhSachGoc(data);
+                }
                 setLoading(false);
             } catch (err) {
                 setError("Không thể tải dữ liệu, hãy kiểm tra lại Backend.");
                 setLoading(false);
             }
         };
-        fetchData();
-    }, []);
 
+        // Dùng setTimeout (Debounce 500ms) để tránh gọi API liên tục khi đang gõ phím
+        const timeoutId = setTimeout(() => {
+            fetchData();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
+
+    // LỌC THEO GIÁ (Vẫn chạy nội bộ trên Frontend cho nhanh)
     useEffect(() => {
         let ketQuaLoc = [...danhSachGoc];
-
-        if (searchTerm) {
-            ketQuaLoc = ketQuaLoc.filter(sach => 
-                sach.tenSach.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
 
         if (priceRange === 'duoi100') {
             ketQuaLoc = ketQuaLoc.filter(sach => sach.gia < 100000);
@@ -62,14 +73,11 @@ const Shop = () => {
         }
 
         setDanhSachHienThi(ketQuaLoc);
-    }, [searchTerm, priceRange, danhSachGoc]);
+    }, [priceRange, danhSachGoc]);
 
-    // Hàm xử lý gõ tìm kiếm trực tiếp trong ô input của trang Shop
     const handleSearchInput = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
-        
-        // Cập nhật URL (để copy link gửi người khác vẫn giữ được kết quả tìm kiếm)
         if (value) {
             setSearchParams({ keyword: value });
         } else {
@@ -80,7 +88,7 @@ const Shop = () => {
     const handleResetFilter = () => {
         setSearchTerm('');
         setPriceRange('all');
-        setSearchParams({}); // Xóa keyword trên URL
+        setSearchParams({});
     };
 
     if (loading) return <div className="flex justify-center items-center min-h-[50vh] text-lg font-medium text-gray-600">Đang tải dữ liệu sách...</div>;
@@ -183,7 +191,6 @@ const Shop = () => {
                             danhSachHienThi.map((sach) => (
                                 <div key={sach.maSach} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group flex flex-col h-full hover:shadow-md transition">
                                     
-                                    {/* =========== NÚT THẢ TIM =========== */}
                                     <button 
                                         onClick={(e) => {
                                             e.preventDefault(); 
@@ -203,7 +210,6 @@ const Shop = () => {
                                         </svg>
                                     </button>
 
-                                    {/* =========== NỘI DUNG SÁCH =========== */}
                                     <Link to={`/sach/${sach.maSach}`} className="flex flex-col h-full">
                                         <div className="relative pt-[130%] bg-gray-50 overflow-hidden">
                                             <img 
@@ -225,7 +231,6 @@ const Shop = () => {
                                         </div>
                                     </Link>
 
-                                    {/* Nút Thêm vào giỏ hàng */}
                                     <div className="px-4 pb-4 mt-auto">
                                         <button 
                                             onClick={(e) => {
