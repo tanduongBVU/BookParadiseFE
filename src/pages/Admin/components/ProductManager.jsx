@@ -126,11 +126,7 @@ const ProductManager = () => {
     const handleSaveProduct = async (e) => {
         e.preventDefault();
 
-        // CHỐT CHẶN FRONTEND: Bắt buộc giá phải > 0
-        if (currentProduct.gia <= 0) {
-            window.alert("Lỗi: Giá bán sản phẩm phải lớn hơn 0 đ!");
-            return; // Dừng lại, không gọi API
-        }
+        
 
         const payload = {
             ...currentProduct,
